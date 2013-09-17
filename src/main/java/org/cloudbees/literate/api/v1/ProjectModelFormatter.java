@@ -38,7 +38,7 @@ public abstract class ProjectModelFormatter {
     /**
      * The Markdown mime type. A {@link ProjectModelFormatter} supporting this mime type must be available.
      */
-    public static final String MARKDOWN = "text/x-markdown";
+    public static final String MARKDOWN = "text/markdown";
 
     /**
      * The mime type implemented by this formatter.
