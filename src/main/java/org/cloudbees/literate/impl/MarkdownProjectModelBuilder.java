@@ -31,6 +31,7 @@ import org.cloudbees.literate.api.v1.ProjectModelRequest;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 import org.cloudbees.literate.spi.v1.ProjectModelBuilder;
 import org.hamcrest.BaseMatcher;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
@@ -163,7 +164,9 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             isBuildHeader = allOf(isHeader, new WithText(containsStringIgnoreCase(request.getBuildId())));
             Map<String, Matcher<Node>> isTaskHeader = new LinkedHashMap<String, Matcher<Node>>();
             for (String taskId : request.getTaskIds()) {
-                isTaskHeader.put(taskId, allOf(isHeader, new WithText(containsStringIgnoreCase(taskId))));
+                isTaskHeader.put(taskId, CoreMatchers.<Node>allOf(
+                        isHeader, new WithText(containsStringIgnoreCase(taskId)))
+                );
             }
             this.isTaskHeader = isTaskHeader;
         }
