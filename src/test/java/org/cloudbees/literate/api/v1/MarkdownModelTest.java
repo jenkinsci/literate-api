@@ -123,6 +123,7 @@ public class MarkdownModelTest {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuildFor(ExecutionEnvironment.any()), Matchers.containsString("rake build"));
+        assertThat(model.getBuildFor(ExecutionEnvironment.any()), Matchers.containsString("rake clean"));
     }
 
     @Test
