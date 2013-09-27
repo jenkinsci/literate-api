@@ -36,6 +36,8 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
@@ -71,8 +73,8 @@ public class MarkdownModelTest {
     public void smokes() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor("java"), Matchers.containsString("mvn verify"));
-        assertThat(model.getBuildFor("ruby"), Matchers.containsString("rake build"));
+        assertThat(model.getBuildFor("java"), contains(Matchers.containsString("mvn verify")));
+        assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build")));
         assertThat(model.getEnvironments().size(), Matchers.is(5));
 
         assertThat(model.getEnvironments(), Matchers
@@ -83,18 +85,18 @@ public class MarkdownModelTest {
     public void markerFile() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor("java"), Matchers.containsString("mvn verify"));
-        assertThat(model.getBuildFor("ruby"), Matchers.containsString("rake build"));
+        assertThat(model.getBuildFor("java"), contains(Matchers.containsString("mvn verify")));
+        assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build")));
     }
 
     @Test
     public void multipleSections() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor("ruby"), Matchers.containsString("rake build"));
-        assertThat(model.getBuildFor("ruby"), Matchers.containsString("rake clean"));
-        assertThat(model.getBuildFor("ruby"), Matchers.not(Matchers.containsString("note in the middle")));
-        assertThat(model.getBuildFor("ruby"), Matchers.not(Matchers.containsString("Smell")));
+        assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build"),
+                Matchers.containsString("rake clean")));
+        assertThat(model.getBuildFor("ruby"), Matchers.not(hasItem(Matchers.containsString("note in the middle"))));
+        assertThat(model.getBuildFor("ruby"), Matchers.not(hasItem(Matchers.containsString("Smell"))));
     }
 
 
@@ -102,7 +104,7 @@ public class MarkdownModelTest {
     public void backTickCommands() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor("java"), Matchers.containsString("mvn verify"));
+        assertThat(model.getBuildFor("java"), contains(Matchers.containsString("mvn verify")));
     }
 
 
@@ -122,15 +124,15 @@ public class MarkdownModelTest {
     public void defaultSimplest() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor(ExecutionEnvironment.any()), Matchers.containsString("rake build"));
-        assertThat(model.getBuildFor(ExecutionEnvironment.any()), Matchers.containsString("rake clean"));
+        assertThat(model.getBuildFor(ExecutionEnvironment.any()), contains(Matchers.containsString("rake build")));
+        assertThat(model.getBuildFor(ExecutionEnvironment.any()), contains(Matchers.containsString("rake clean")));
     }
 
     @Test
     public void defaultBuild() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor("ruby"), Matchers.containsString("rake build"));
+        assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build")));
     }
 
     @Test
@@ -138,9 +140,9 @@ public class MarkdownModelTest {
         ProjectModel model = new ProjectModelSource().submit(
                 ProjectModelRequest.builder(repository).addTaskId("deploy").addTaskId("promote").build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor("ruby"), Matchers.containsString("rake build"));
-        assertThat(model.getTask("deploy").getCommand(), Matchers.containsString("bees app:deploy"));
-        assertThat(model.getTask("promote").getCommand(), Matchers.containsString("super"));
+        assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build")));
+        assertThat(model.getTask("deploy").getCommand(), contains(Matchers.containsString("bees app:deploy")));
+        assertThat(model.getTask("promote").getCommand(), contains(Matchers.containsString("super")));
 
     }
 
@@ -149,8 +151,8 @@ public class MarkdownModelTest {
     public void showcase() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
         assertThat(model, Matchers.notNullValue());
-        assertThat(model.getBuildFor("java"), Matchers.containsString("mvn package"));
-        assertThat(model.getBuildFor("java"), Matchers.containsString("./bin/ci-cleanup"));
+        assertThat(model.getBuildFor("java"), contains(Matchers.containsString("mvn package")));
+        assertThat(model.getBuildFor("java"), contains(Matchers.containsString("./bin/ci-cleanup")));
         assertThat(model.getEnvironments(), Matchers
                 .hasItem(new ExecutionEnvironment("java", "oraclejdk7", "linux", "x86")));
     }
@@ -162,7 +164,8 @@ public class MarkdownModelTest {
                         .withBuildId("how to").addTaskIds("install", "uninstall").build());
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuildFor(), Matchers
-                .allOf(Matchers.containsString("./configure"), Matchers.containsString("./make clean all")));
+                .allOf(contains(Matchers.containsString("./configure")), contains(
+                        Matchers.containsString("./make clean all"))));
         assertThat(model.getEnvironments(), Matchers.hasItems(
                 new ExecutionEnvironment("linux", "x86"),
                 new ExecutionEnvironment("linux", "x64"),
@@ -172,10 +175,10 @@ public class MarkdownModelTest {
         ));
         assertThat(model.getTask("install"),
                 Matchers.allOf(Matchers.notNullValue(),
-                        Matchers.hasProperty("command", Matchers.is("./make install\n"))));
+                        Matchers.hasProperty("command", contains(Matchers.is("./make install\n")))));
         assertThat(model.getTask("uninstall"),
                 Matchers.allOf(Matchers.notNullValue(),
-                        Matchers.hasProperty("command", Matchers.is("./make uninstall\n"))));
+                        Matchers.hasProperty("command", contains(Matchers.is("./make uninstall\n")))));
     }
 
 

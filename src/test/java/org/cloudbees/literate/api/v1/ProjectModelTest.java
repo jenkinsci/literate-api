@@ -36,12 +36,12 @@ public class ProjectModelTest {
     @Test
     public void smokes() {
         assertThat(ProjectModel.builder().addBuild("mvn test").build().getBuildFor(
-                ExecutionEnvironment.any()), is("mvn test"));
+                ExecutionEnvironment.any()), is(Collections.singletonList("mvn test")));
     }
 
     @Test
     public void builderSmokes() {
-        assertThat(ProjectModel.builder().addBuild("mvn test").build().getBuildFor(), is("mvn test"));
+        assertThat(ProjectModel.builder().addBuild("mvn test").build().getBuildFor(), is(Collections.singletonList("mvn test")));
     }
 
     @Test(expected = IllegalStateException.class)
@@ -64,8 +64,8 @@ public class ProjectModelTest {
                 .addBuild(Collections.singleton("linux"), "mvn test")
                 .addBuild(Collections.singleton("windows"), "mvn.bat test").build();
         assertThat(model.getBuildFor(), nullValue());
-        assertThat(model.getBuildFor("linux"), is("mvn test"));
-        assertThat(model.getBuildFor("windows"), is("mvn.bat test"));
+        assertThat(model.getBuildFor("linux"), is(Collections.singletonList("mvn test")));
+        assertThat(model.getBuildFor("windows"), is(Collections.singletonList("mvn.bat test")));
     }
 
 

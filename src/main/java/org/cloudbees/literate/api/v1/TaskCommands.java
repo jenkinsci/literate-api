@@ -26,19 +26,21 @@ package org.cloudbees.literate.api.v1;
 import net.jcip.annotations.Immutable;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents a post-build task.
  */
 @Immutable
 public class TaskCommands extends AbstractCommands {
+
     /**
      * Constructor.
      *
-     * @param commmand the command.
+     * @param commands the command.
      */
-    public TaskCommands(String commmand) {
-        super(Collections.singletonMap(ExecutionEnvironment.any(), commmand));
+    public TaskCommands(List<String> commands) {
+        super(Collections.singletonMap(ExecutionEnvironment.any(), commands));
     }
 
     /**
@@ -46,7 +48,7 @@ public class TaskCommands extends AbstractCommands {
      *
      * @return the command.
      */
-    public String getCommand() {
+    public List<String> getCommand() {
         return getCommands().get(ExecutionEnvironment.any());
     }
 

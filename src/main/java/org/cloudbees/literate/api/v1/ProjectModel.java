@@ -91,7 +91,7 @@ public class ProjectModel implements Serializable {
         } else {
             this.environments = Collections.singletonList(ExecutionEnvironment.any());
         }
-        this.build = build == null ? new BuildCommands("") : build;
+        this.build = build == null ? new BuildCommands(Collections.singletonList("")) : build;
         this.tasks = tasks == null ? Collections.<String, TaskCommands>emptyMap() : Collections.unmodifiableMap(tasks);
     }
 
@@ -102,7 +102,7 @@ public class ProjectModel implements Serializable {
      * @return the build command or {@code null} if no build command matches the supplied labels.
      */
     @CheckForNull
-    public String getBuildFor(String... labels) {
+    public List<String> getBuildFor(String... labels) {
         return getBuildFor(new ExecutionEnvironment(labels));
     }
 
@@ -113,7 +113,7 @@ public class ProjectModel implements Serializable {
      * @return the build command or {@code null} if no build command matches the supplied environment.
      */
     @CheckForNull
-    public String getBuildFor(@CheckForNull ExecutionEnvironment environment) {
+    public List<String> getBuildFor(@CheckForNull ExecutionEnvironment environment) {
         return build.getMatchingCommand(environment == null ? ExecutionEnvironment.any() : environment);
     }
 
@@ -173,8 +173,8 @@ public class ProjectModel implements Serializable {
          * The build commands.
          */
         @NonNull
-        private final Map<ExecutionEnvironment, String> build =
-                new LinkedHashMap<ExecutionEnvironment, String>();
+        private final Map<ExecutionEnvironment, List<String>> build =
+                new LinkedHashMap<ExecutionEnvironment, List<String>>();
 
         /**
          * The post-build tasks.
@@ -231,8 +231,8 @@ public class ProjectModel implements Serializable {
          * @return {@code this} for method chaining.
          */
         @NonNull
-        public Builder addBuild(Map<ExecutionEnvironment, String> build) {
-            for (Map.Entry<ExecutionEnvironment, String> entry : build.entrySet()) {
+        public Builder addBuild(Map<ExecutionEnvironment, List<String>> build) {
+            for (Map.Entry<ExecutionEnvironment, List<String>> entry : build.entrySet()) {
                 addBuild(entry.getKey(), entry.getValue());
             }
             return this;
@@ -247,6 +247,29 @@ public class ProjectModel implements Serializable {
         @NonNull
         public Builder addBuild(String command) {
             return addBuild(Collections.<String>emptySet(), command);
+        }
+
+        /**
+         * Adds the supplied build commands.
+         *
+         * @param commands the build commands.
+         * @return {@code this} for method chaining.
+         */
+        @NonNull
+        public Builder addBuild(List<String> commands) {
+            return addBuild(Collections.<String>emptySet(), commands);
+        }
+
+        /**
+         * Adds the supplied build command.
+         *
+         * @param labels  the environment labels.
+         * @param commands the build command.
+         * @return {@code this} for method chaining.
+         */
+        @NonNull
+        public Builder addBuild(Set<String> labels, List<String> commands) {
+            return addBuild(new ExecutionEnvironment(labels), commands);
         }
 
         /**
@@ -270,6 +293,18 @@ public class ProjectModel implements Serializable {
          */
         @NonNull
         public Builder addBuild(ExecutionEnvironment environment, String command) {
+            return addBuild(environment, Collections.singletonList(command));
+        }
+
+        /**
+         * Adds the supplied build command.
+         *
+         * @param environment the environment.
+         * @param commands     the build command.
+         * @return {@code this} for method chaining.
+         */
+        @NonNull
+        public Builder addBuild(ExecutionEnvironment environment, List<String> commands) {
             if (environment == null) {
                 environment = ExecutionEnvironment.any();
             }
@@ -280,11 +315,11 @@ public class ProjectModel implements Serializable {
             } else if (build.size() == 1 && build.containsKey(ExecutionEnvironment.any())) {
                 throw new IllegalStateException("Cannot have a global command and environment specific commands");
             }
-            String existing = build.get(environment);
+            List<String> existing = build.get(environment);
             if (existing == null) {
-                build.put(environment, command);
+                build.put(environment, commands);
             } else {
-                build.put(environment, AbstractCommands.join(existing, command));
+                build.put(environment, AbstractCommands.join(existing, commands));
             }
             return this;
         }
@@ -298,7 +333,19 @@ public class ProjectModel implements Serializable {
          */
         @NonNull
         public Builder addTask(String taskId, String command) {
-            return addTask(taskId, new TaskCommands(command));
+            return addTask(taskId, Collections.singletonList(command));
+        }
+
+        /**
+         * Adds the supplied task command.
+         *
+         * @param taskId  the task id.
+         * @param commands the task command.
+         * @return {@code this} for method chaining.
+         */
+        @NonNull
+        public Builder addTask(String taskId, List<String> commands) {
+            return addTask(taskId, new TaskCommands(commands));
         }
 
         /**

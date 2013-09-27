@@ -25,8 +25,10 @@ package org.cloudbees.literate.api.v1;
 
 import net.jcip.annotations.Immutable;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,20 +45,20 @@ public class BuildCommands extends AbstractCommands {
     /**
      * Constructor.
      *
-     * @param command the build command.
+     * @param commands the build commands.
      */
-    public BuildCommands(String command) {
-        this(null, command);
+    public BuildCommands(List<String> commands) {
+        this(null, commands);
     }
 
     /**
      * Constructor.
      *
      * @param environment the environment that the command required.
-     * @param command     the build command.
+     * @param commands     the build command.
      */
-    public BuildCommands(ExecutionEnvironment environment, String command) {
-        this(Collections.singletonMap(environment == null ? ExecutionEnvironment.any() : environment, command));
+    public BuildCommands(ExecutionEnvironment environment, List<String> commands) {
+        this(Collections.singletonMap(environment == null ? ExecutionEnvironment.any() : environment, commands));
     }
 
     /**
@@ -65,7 +67,7 @@ public class BuildCommands extends AbstractCommands {
      * @param buildCommands a map of environments to build commands, as each environment may have separate build
      *                      commands.
      */
-    public BuildCommands(Map<ExecutionEnvironment, String> buildCommands) {
+    public BuildCommands(Map<ExecutionEnvironment, List<String>> buildCommands) {
         super(buildCommands);
     }
 
@@ -77,8 +79,8 @@ public class BuildCommands extends AbstractCommands {
      * @return the merged commands.
      */
     public static BuildCommands merge(BuildCommands cmd1, BuildCommands cmd2) {
-        Map<ExecutionEnvironment, String> result = new LinkedHashMap<ExecutionEnvironment, String>(cmd1.getCommands());
-        for (Map.Entry<ExecutionEnvironment, String> entry : cmd2.getCommands().entrySet()) {
+        Map<ExecutionEnvironment, List<String>> result = new LinkedHashMap<ExecutionEnvironment, List<String>>(cmd1.getCommands());
+        for (Map.Entry<ExecutionEnvironment, List<String>> entry : cmd2.getCommands().entrySet()) {
             result.put(entry.getKey(), join(result.get(entry.getKey()), entry.getValue()));
         }
         return new BuildCommands(result);

@@ -269,8 +269,8 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             }
         }
 
-        private Map<ExecutionEnvironment, String> parseBuild(List<Node> children) {
-            Map<ExecutionEnvironment, String> result = new LinkedHashMap<ExecutionEnvironment, String>();
+        private Map<ExecutionEnvironment, List<String>> parseBuild(List<Node> children) {
+            Map<ExecutionEnvironment, List<String>> result = new LinkedHashMap<ExecutionEnvironment, List<String>>();
             for (Node node : children) {
                 if (isItem.matches(node)) {
                     result.putAll(parseBuild(node));
@@ -279,24 +279,24 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             return result;
         }
 
-        private Map<ExecutionEnvironment, String> parseBuild(Node listItem) {
+        private Map<ExecutionEnvironment, List<String>> parseBuild(Node listItem) {
             if (hasVerbatim.matches(listItem)) {
                 Set<String> labels = new TreeSet<String>();
-                StringBuilder cmd = new StringBuilder();
+                List<String> cmd = new ArrayList<String>();
                 for (Node root : listItem.getChildren()) {
                     if (isVerbatim.matches(root)) {
-                        cmd.append(getText(root));
+                        cmd.add(getText(root));
                     }
                     if (isRoot.matches(root) || isPara.matches(root)) {
                         for (Node child : root.getChildren()) {
                             if (isVerbatim.matches(child)) {
-                                cmd.append(getText(child));
+                                cmd.add(getText(child));
                             } else if (isPara.matches(child)) {
                                 for (Node node : child.getChildren()) {
                                     if (isSuper.matches(node)) {
                                         for (Node n : node.getChildren()) {
                                             if (isVerbatim.matches(n)) {
-                                                cmd.append(getText(child));
+                                                cmd.add(getText(child));
                                             } else if (isCode.matches(n)) {
                                                 labels.add(getText(n));
                                             }
@@ -306,7 +306,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
                             } else if (isSuper.matches(child)) {
                                 for (Node node : child.getChildren()) {
                                     if (isVerbatim.matches(child)) {
-                                        cmd.append(getText(node));
+                                        cmd.add(getText(node));
                                     } else if (isCode.matches(node)) {
                                         labels.add(getText(node));
                                     }
@@ -315,7 +315,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
                         }
                     }
                 }
-                return Collections.singletonMap(new ExecutionEnvironment(labels), cmd.toString());
+                return Collections.singletonMap(new ExecutionEnvironment(labels), cmd);
             }
             return Collections.emptyMap();
         }

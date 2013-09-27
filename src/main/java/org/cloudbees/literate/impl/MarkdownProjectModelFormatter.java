@@ -5,6 +5,7 @@ import org.cloudbees.literate.api.v1.ProjectModel;
 import org.cloudbees.literate.api.v1.ProjectModelFormatter;
 import org.cloudbees.literate.api.v1.TaskCommands;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,7 +40,7 @@ public class MarkdownProjectModelFormatter extends ProjectModelFormatter {
         result.append("\n");
         result.append("# Build\n");
         result.append("\n");
-        for (Map.Entry<ExecutionEnvironment, String> entry : model.getBuild().getCommands().entrySet()) {
+        for (Map.Entry<ExecutionEnvironment, List<String>> entry : model.getBuild().getCommands().entrySet()) {
             boolean first = true;
             for (String env : entry.getKey().getLabels()) {
                 result.append(first ? "* On " : ", ");
@@ -49,9 +50,17 @@ public class MarkdownProjectModelFormatter extends ProjectModelFormatter {
             if (!first) {
                 result.append("\n\n");
             }
-            result.append(first ? "    " : "        ")
-                    .append(entry.getValue().replace("\n", first ? "\n    " : "\n        "))
-                    .append("\n\n");
+            boolean needBreakingText = false;
+            for (String command : entry.getValue()) {
+                if (needBreakingText) {
+                    result.append(first ? "Then\n\n" : "    Then\n\n");
+                } else {
+                    needBreakingText = true;
+                }
+                result.append(first ? "    " : "        ")
+                        .append(command.replace("\n", first ? "\n    " : "\n        "))
+                        .append("\n\n");
+            }
         }
         for (String taskId : model.getTaskIds()) {
             TaskCommands task = model.getTask(taskId);
@@ -62,9 +71,17 @@ public class MarkdownProjectModelFormatter extends ProjectModelFormatter {
             result.append("# ").append(Character.toUpperCase(taskId.charAt(0)))
                     .append(taskId.substring(1)).append("\n");
             result.append("\n");
-            result.append("    ")
-                    .append(task.getCommand().replace("\n", "\n    "))
-                    .append("\n\n");
+            boolean needBreakingText = false;
+            for (String command : task.getCommand()) {
+                if (needBreakingText) {
+                    result.append("Then\n\n");
+                } else {
+                    needBreakingText = true;
+                }
+                result.append("    ")
+                        .append(command.replace("\n", "\n    "))
+                        .append("\n\n");
+            }
 
         }
 
