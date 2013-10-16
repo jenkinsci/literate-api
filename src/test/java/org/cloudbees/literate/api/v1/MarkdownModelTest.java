@@ -38,6 +38,7 @@ import java.net.URL;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
@@ -95,8 +96,8 @@ public class MarkdownModelTest {
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build"),
                 Matchers.containsString("rake clean")));
-        assertThat(model.getBuildFor("ruby"), Matchers.not(hasItem(Matchers.containsString("note in the middle"))));
-        assertThat(model.getBuildFor("ruby"), Matchers.not(hasItem(Matchers.containsString("Smell"))));
+        assertThat(model.getBuildFor("ruby"), not(Matchers.<String>hasItem(Matchers.containsString("note in the middle"))));
+        assertThat(model.getBuildFor("ruby"), not(Matchers.<String>hasItem(Matchers.containsString("Smell"))));
     }
 
 
