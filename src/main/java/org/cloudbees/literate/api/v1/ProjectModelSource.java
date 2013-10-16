@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
@@ -94,8 +95,6 @@ public class ProjectModelSource {
                 if (pmbe == null) {
                     pmbe = e;
                 }
-            } catch (NullPointerException e) {
-                // ignore
             }
         }
         if (ioe != null) {
