@@ -154,12 +154,15 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
          */
         private final Map<String, Matcher<Node>> isTaskHeader;
 
+        private final int minLength;
+
         /**
          * Makes the parser.
          *
          * @param request the request to parse.
          */
         private Parser(ProjectModelRequest request) {
+            minLength = "#".length() + request.getBuildId().length() + "\n    a".length();
             isEnvHeader = allOf(isHeader, new WithText(containsStringIgnoreCase(request.getEnvironmentsId())));
             isBuildHeader = allOf(isHeader, new WithText(containsStringIgnoreCase(request.getBuildId())));
             Map<String, Matcher<Node>> isTaskHeader = new LinkedHashMap<String, Matcher<Node>>();
@@ -182,31 +185,35 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
         private ProjectModel parseProjectModel(ProjectRepository repository, String filePath) throws IOException {
             InputStream stream = repository.get(filePath);
             try {
-                RootNode document = new PegDownProcessor(GITHUB).parseMarkdown(IOUtils.toCharArray(stream));
-                if (document.getChildren().isEmpty()) {
+                char[] chars = IOUtils.toCharArray(stream);
+                RootNode document = chars.length < minLength ? null : new PegDownProcessor(GITHUB).parseMarkdown(chars);
+                ProjectModel.Builder builder = ProjectModel.builder();
+                if (document != null && !document.getChildren().isEmpty()) {
+                    Iterator<Node> iterator = document.getChildren().iterator();
+
+                    consumeEnvironmentSection(iterator, builder);
+
+                    iterator = document.getChildren().iterator();
+                    if (discardTo(iterator, isBuildHeader)) {
+                        consumeBuild(iterator, builder);
+                    }
+
+                    for (Map.Entry<String, Matcher<Node>> entry : isTaskHeader.entrySet()) {
+                        iterator = document.getChildren().iterator();
+                        if (discardTo(iterator, entry.getValue())) {
+                            consumeTask(iterator, builder, entry.getKey());
+                        }
+                    }
+                }
+
+                ProjectModel model = builder.build();
+                if (model.getBuild().getCommands().isEmpty() && model.getTaskIds().isEmpty()) {
                     if (!"README.md".equals(filePath)) {
                         // try the fall-back
                         return parseProjectModel(repository, "README.md");
                     }
                 }
-                Iterator<Node> iterator = document.getChildren().iterator();
-                ProjectModel.Builder builder = ProjectModel.builder();
-
-                consumeEnvironmentSection(iterator, builder);
-
-                iterator = document.getChildren().iterator();
-                if (discardTo(iterator, isBuildHeader)) {
-                    consumeBuild(iterator, builder);
-                }
-
-                for (Map.Entry<String, Matcher<Node>> entry : isTaskHeader.entrySet()) {
-                    iterator = document.getChildren().iterator();
-                    if (discardTo(iterator, entry.getValue())) {
-                        consumeTask(iterator, builder, entry.getKey());
-                    }
-                }
-
-                return builder.build();
+                return model;
             } finally {
                 IOUtils.closeQuietly(stream);
             }

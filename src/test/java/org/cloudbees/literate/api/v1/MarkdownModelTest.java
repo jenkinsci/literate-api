@@ -35,9 +35,11 @@ import org.junit.rules.TestName;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collections;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -60,8 +62,8 @@ public class MarkdownModelTest {
         } catch (URISyntaxException e) {
             projectRootDir = new File(url.getPath());
         }
-        assumeThat("The test resource for " + name.getMethodName() + " exist", projectRootDir.isDirectory(), Matchers
-                .is(true));
+        assumeThat("The test resource for " + name.getMethodName() + " exist", projectRootDir.isDirectory(),
+                is(true));
         repository = new FilesystemRepository(projectRootDir);
     }
 
@@ -76,7 +78,7 @@ public class MarkdownModelTest {
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuildFor("java"), contains(Matchers.containsString("mvn verify")));
         assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build")));
-        assertThat(model.getEnvironments().size(), Matchers.is(5));
+        assertThat(model.getEnvironments().size(), is(5));
 
         assertThat(model.getEnvironments(), Matchers
                 .hasItem(new ExecutionEnvironment("java", "oraclejdk7", "linux", "x86")));
@@ -176,10 +178,18 @@ public class MarkdownModelTest {
         ));
         assertThat(model.getTask("install"),
                 Matchers.allOf(Matchers.notNullValue(),
-                        Matchers.hasProperty("command", contains(Matchers.is("./make install\n")))));
+                        Matchers.hasProperty("command", contains(is("./make install\n")))));
         assertThat(model.getTask("uninstall"),
                 Matchers.allOf(Matchers.notNullValue(),
-                        Matchers.hasProperty("command", contains(Matchers.is("./make uninstall\n")))));
+                        Matchers.hasProperty("command", contains(is("./make uninstall\n")))));
+    }
+
+    @Test
+    public void markerFileWithDummyText() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThat(model, Matchers.notNullValue());
+        assertThat(model.getEnvironments(), is(Collections.singletonList(ExecutionEnvironment.any())));
+        assertThat(model.getBuildFor(ExecutionEnvironment.any()), is(contains(Matchers.containsString("mvn install"))));
     }
 
 
