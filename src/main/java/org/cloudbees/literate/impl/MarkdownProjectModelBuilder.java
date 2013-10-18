@@ -79,7 +79,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
     /**
      * {@inheritDoc}
      */
-    @Override
+    //@Override
     public ProjectModel build(ProjectModelRequest request) throws IOException, ProjectModelBuildingException {
         return new Parser(request).parseProjectModel(request.getRepository(), "." + request.getBaseName() + ".md");
     }
@@ -404,7 +404,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             this.childMatcher = childMatcher;
         }
 
-        @Override
+        //@Override
         public boolean matches(Object item) {
             if (!(item instanceof Node)) {
                 return false;
@@ -417,7 +417,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             return false;
         }
 
-        @Override
+        //@Override
         public void describeTo(Description description) {
             description.appendText("with a child node matching ").appendDescriptionOf(childMatcher);
         }
@@ -430,7 +430,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             this.childMatcher = childMatcher;
         }
 
-        @Override
+        //@Override
         public boolean matches(Object item) {
             if (!(item instanceof Node)) {
                 return false;
@@ -443,7 +443,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             return false;
         }
 
-        @Override
+        //@Override
         public void describeTo(Description description) {
             description.appendText("with a descendant node matching ").appendDescriptionOf(childMatcher);
         }
@@ -456,7 +456,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             textMatcher = matcher;
         }
 
-        @Override
+        //@Override
         public boolean matches(Object item) {
             if (!(item instanceof Node)) {
                 return false;
@@ -477,7 +477,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             return textMatcher.matches(builder.toString());
         }
 
-        @Override
+        //@Override
         public void describeTo(Description description) {
             description.appendText("with text matching ").appendDescriptionOf(textMatcher);
         }
@@ -488,6 +488,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             super(substring.toLowerCase());
         }
 
+        @SuppressWarnings("IndexOfReplaceableByContains")
         @Override
         protected boolean evalSubstringOf(String s) {
             return s.toLowerCase().indexOf(substring) >= 0;

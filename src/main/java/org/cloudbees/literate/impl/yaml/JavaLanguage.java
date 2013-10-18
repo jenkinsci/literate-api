@@ -36,12 +36,12 @@ import java.util.Set;
  * @since 17/05/2013 13:29
  */
 public class JavaLanguage implements Language {
-    @Override
+    //@Override
     public Set<String> supported() {
         return Collections.singleton("java");
     }
 
-    @Override
+    //@Override
     public ProjectModel build(Map<String, Object> model, ProjectRepository repository) throws IOException {
         if (repository.isFile("build.gradle")) {
             return ProjectModel.builder().addBuild("gradle check").build();

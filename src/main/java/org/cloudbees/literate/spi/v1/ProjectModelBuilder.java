@@ -67,7 +67,7 @@ public interface ProjectModelBuilder {
         /**
          * {@inheritDoc}
          */
-        @Override
+        //@Override
         public int compare(ProjectModelBuilder o1, ProjectModelBuilder o2) {
             Priority a1 = o1.getClass().getAnnotation(Priority.class);
             Priority a2 = o2.getClass().getAnnotation(Priority.class);

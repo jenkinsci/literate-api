@@ -45,7 +45,7 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
     /**
      * {@inheritDoc}
      */
-    @Override
+    //@Override
     public ProjectModel build(ProjectModelRequest request) throws IOException, ProjectModelBuildingException {
         for (String name : Arrays.asList("." + request.getBaseName() + ".yml", ".travis.yml")) {
             if (request.getRepository().isFile(name)) {
