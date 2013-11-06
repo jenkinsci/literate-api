@@ -32,6 +32,7 @@ import java.io.Serializable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Comparator;
+import java.util.Set;
 
 /**
  * Service provider interface for {@link org.cloudbees.literate.api.v1.ProjectModelSource}.
@@ -46,6 +47,14 @@ public interface ProjectModelBuilder {
      * @throws ProjectModelBuildingException if the source repository does not yield a valid model.
      */
     ProjectModel build(ProjectModelRequest request) throws IOException, ProjectModelBuildingException;
+    
+    /**
+     * Provides a set of accepted marker file names by this builder, for the given base name
+     * @param baseName The base name for the project marker file
+     * @return a set of marker files names accepted by this builder
+     * @throws IOException
+     */
+    Set<String> getPossibleMarkerFiles(String baseName);
 
     /**
      * Annotation to allow defining the sequence amongst competing {@link ProjectModelBuilder} implementations.

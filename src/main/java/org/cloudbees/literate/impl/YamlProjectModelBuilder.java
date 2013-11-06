@@ -34,8 +34,10 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * A {@link ProjectModelBuilder} that uses a YAML file as the source of its {@link ProjectModel}
@@ -67,5 +69,11 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
         }
         throw new ProjectModelBuildingException("Not a YAML based literate project");
     }
+
+  @Override
+  public Set<String> getPossibleMarkerFiles(String baseName) {
+    return new HashSet<String>(Arrays.asList("." + baseName + ".yml", ".travis.yml"));
+  }
+
 
 }

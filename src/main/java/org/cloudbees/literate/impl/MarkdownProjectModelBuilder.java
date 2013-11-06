@@ -81,7 +81,16 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
      */
     //@Override
     public ProjectModel build(ProjectModelRequest request) throws IOException, ProjectModelBuildingException {
-        return new Parser(request).parseProjectModel(request.getRepository(), "." + request.getBaseName() + ".md");
+        return new Parser(request).parseProjectModel(request.getRepository(), getMarkerFile(request.getBaseName()));
+    }
+    
+    //@Override
+    public Set<String> getPossibleMarkerFiles(String baseName) {
+      return Collections.singleton(getMarkerFile(baseName));
+    }
+
+    private String getMarkerFile(String baseName) {
+      return "." + baseName + ".md";
     }
 
     /**
@@ -514,4 +523,5 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
         }
 
     }
+
 }
