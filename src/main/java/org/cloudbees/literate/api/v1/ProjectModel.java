@@ -47,34 +47,21 @@ public class ProjectModel implements Serializable {
      * Ensure consistent serialization.
      */
     private static final long serialVersionUID = 1L;
-
     /**
      * The environments that this project should be built on.
      */
     @NonNull
     private final List<ExecutionEnvironment> environments;
-
     /**
      * The commands used to build the project.
      */
     @NonNull
     private final BuildCommands build;
-
     /**
      * The post-build tasks available for the project.
      */
     @NonNull
     private final Map<String, TaskCommands> tasks;
-
-    /**
-     * Instantiates a {@link Builder} for creating {@link ProjectModel} instances.
-     *
-     * @return a new {@link Builder} for creating {@link ProjectModel} instances.
-     */
-    @NonNull
-    public static Builder builder() {
-        return new Builder();
-    }
 
     /**
      * Do not invoke directly, use {@link #builder()}.
@@ -93,6 +80,30 @@ public class ProjectModel implements Serializable {
         }
         this.build = build == null ? new BuildCommands(Collections.singletonList("")) : build;
         this.tasks = tasks == null ? Collections.<String, TaskCommands>emptyMap() : Collections.unmodifiableMap(tasks);
+    }
+
+    /**
+     * Instantiates a {@link Builder} for creating {@link ProjectModel} instances.
+     *
+     * @return a new {@link Builder} for creating {@link ProjectModel} instances.
+     */
+    @NonNull
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Checks that the model is a valid model.
+     *
+     * @throws ProjectModelValidationException
+     *          if the model is invalid.
+     */
+    private void checkValid() throws ProjectModelValidationException {
+        for (ExecutionEnvironment environment : environments) {
+            if (getBuildFor(environment) == null) {
+                throw new ProjectModelValidationException("Missing build commands for environment: " + environment);
+            }
+        }
     }
 
     /**
@@ -168,14 +179,12 @@ public class ProjectModel implements Serializable {
          */
         @NonNull
         private final List<ExecutionEnvironment> environments = new ArrayList<ExecutionEnvironment>();
-
         /**
          * The build commands.
          */
         @NonNull
         private final Map<ExecutionEnvironment, List<String>> build =
                 new LinkedHashMap<ExecutionEnvironment, List<String>>();
-
         /**
          * The post-build tasks.
          */
@@ -263,7 +272,7 @@ public class ProjectModel implements Serializable {
         /**
          * Adds the supplied build command.
          *
-         * @param labels  the environment labels.
+         * @param labels   the environment labels.
          * @param commands the build command.
          * @return {@code this} for method chaining.
          */
@@ -300,7 +309,7 @@ public class ProjectModel implements Serializable {
          * Adds the supplied build command.
          *
          * @param environment the environment.
-         * @param commands     the build command.
+         * @param commands    the build command.
          * @return {@code this} for method chaining.
          */
         @NonNull
@@ -339,7 +348,7 @@ public class ProjectModel implements Serializable {
         /**
          * Adds the supplied task command.
          *
-         * @param taskId  the task id.
+         * @param taskId   the task id.
          * @param commands the task command.
          * @return {@code this} for method chaining.
          */
@@ -371,12 +380,14 @@ public class ProjectModel implements Serializable {
          * @return the {@link ProjectModel} instance.
          */
         @NonNull
-        public ProjectModel build() {
-            return new ProjectModel(environments.isEmpty()
+        public ProjectModel build() throws ProjectModelValidationException {
+            ProjectModel model = new ProjectModel(environments.isEmpty()
                     ? Collections.singletonList(ExecutionEnvironment.any())
                     : environments,
                     new BuildCommands(build),
                     tasks);
+            model.checkValid();
+            return model;
         }
 
     }

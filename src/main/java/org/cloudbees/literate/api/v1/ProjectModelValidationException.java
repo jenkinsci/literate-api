@@ -21,24 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.cloudbees.literate.impl.yaml;
-
-import org.cloudbees.literate.api.v1.ProjectModel;
-import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
-import org.cloudbees.literate.api.v1.ProjectModelValidationException;
-import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
+package org.cloudbees.literate.api.v1;
 
 /**
- * @author Stephen Connolly
+ * Thrown when a {@link org.cloudbees.literate.api.v1.ProjectModel} is invalid the violation of a project model invariant.
  */
-public interface Language {
+public class ProjectModelValidationException extends ProjectModelBuildingException {
 
-    Set<String> supported();
+    /**
+     * {@inheritDoc}
+     */
+    public ProjectModelValidationException() {
+    }
 
-    ProjectModel build(Map<String, Object> model, ProjectRepository repository)
-            throws IOException, ProjectModelBuildingException;
+    /**
+     * {@inheritDoc}
+     */
+    public ProjectModelValidationException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ProjectModelValidationException(String message) {
+        super(message);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ProjectModelValidationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

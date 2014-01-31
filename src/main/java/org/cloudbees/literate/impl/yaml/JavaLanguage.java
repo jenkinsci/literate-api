@@ -24,6 +24,8 @@
 package org.cloudbees.literate.impl.yaml;
 
 import org.cloudbees.literate.api.v1.ProjectModel;
+import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
+import org.cloudbees.literate.api.v1.ProjectModelValidationException;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 
 import java.io.IOException;
@@ -42,7 +44,8 @@ public class JavaLanguage implements Language {
     }
 
     //@Override
-    public ProjectModel build(Map<String, Object> model, ProjectRepository repository) throws IOException {
+    public ProjectModel build(Map<String, Object> model, ProjectRepository repository)
+            throws IOException, ProjectModelBuildingException {
         if (repository.isFile("build.gradle")) {
             return ProjectModel.builder().addBuild("gradle check").build();
         }

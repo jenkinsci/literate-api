@@ -29,6 +29,7 @@ import org.cloudbees.literate.api.v1.ExecutionEnvironment;
 import org.cloudbees.literate.api.v1.ProjectModel;
 import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
 import org.cloudbees.literate.api.v1.ProjectModelRequest;
+import org.cloudbees.literate.api.v1.ProjectModelValidationException;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 import org.cloudbees.literate.spi.v1.ProjectModelBuilder;
 import org.hamcrest.BaseMatcher;
@@ -78,6 +79,26 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
      */
     private static final int GITHUB = Extensions.AUTOLINKS + Extensions.FENCED_CODE_BLOCKS + Extensions.HARDWRAPS;
 
+    public static String getText(Node node) {
+        StringBuilder builder = new StringBuilder();
+        if (node instanceof TextNode) {
+            builder.append(TextNode.class.cast(node).getText());
+        } else {
+            for (Node n : node.getChildren()) {
+                if (n instanceof TextNode) {
+                    builder.append(TextNode.class.cast(n).getText());
+                } else if (n instanceof SuperNode) {
+                    builder.append(getText(n));
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+    public static HeaderNode asHeaderNode(Node node) {
+        return HeaderNode.class.cast(node);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -108,67 +129,54 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
          * Matches header nodes.
          */
         private static final Matcher<Node> isHeader = instanceOf(HeaderNode.class);
-
         /**
          * Matches the root node.
          */
         private static final Matcher<Node> isRoot = instanceOf(RootNode.class);
-
         /**
          * Matches paragraphs of text.
          */
         private static final Matcher<Node> isPara = instanceOf(ParaNode.class);
-
         /**
          * Matches super nodes.
          */
         private static final Matcher<Node> isSuper = instanceOf(SuperNode.class);
-
         /**
          * Matches code blocks.
          */
         private static final Matcher<Node> isCode = instanceOf(CodeNode.class);
-
         /**
          * Matches list items.
          */
         private static final Matcher<Node> isItem = allOf(instanceOf(ListItemNode.class), new WithChild(isRoot));
-
         /**
          * Matches bullet points.
          */
         private static final Matcher<Node> isBullet = allOf(instanceOf(BulletListNode.class), new WithChild(isItem));
-
         /**
          * Matches a node that has a bullet point descendant.
          */
         private static final Matcher<Node> hasBullet = new WithDescendant(isBullet);
-
         /**
          * Matches a verbatim block.
          */
         private static final Matcher<Node> isVerbatim = instanceOf(VerbatimNode.class);
-
         /**
          * Matches a node that has a verbatim descendant.
          */
         private static final Matcher<Node> hasVerbatim = new WithDescendant(isVerbatim);
-
         /**
          * Matches the environments section header.
          */
         private final Matcher<Node> isEnvHeader;
-
         /**
          * Matches the build section header.
          */
         private final Matcher<Node> isBuildHeader;
-
         /**
          * Matchers for the task section headers.
          */
         private final Map<String, Matcher<Node>> isTaskHeader;
-
         private final int minLength;
 
         /**
@@ -197,7 +205,8 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
          * @return the model.
          * @throws IOException when things go wrong.
          */
-        private ProjectModel parseProjectModel(ProjectRepository repository, String filePath) throws IOException {
+        private ProjectModel parseProjectModel(ProjectRepository repository, String filePath)
+                throws IOException, ProjectModelValidationException {
             InputStream stream = repository.get(filePath);
             try {
                 char[] chars = IOUtils.toCharArray(stream);
@@ -220,9 +229,13 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
                         }
                     }
                 }
-
-                ProjectModel model = builder.build();
-                if (model.getBuild().getCommands().isEmpty() && model.getTaskIds().isEmpty()) {
+                ProjectModel model;
+                try {
+                    model = builder.build();
+                } catch (ProjectModelBuildingException e) {
+                    model = null;
+                }
+                if (model == null || model.getBuild().getCommands().isEmpty() && model.getTaskIds().isEmpty()) {
                     if (!"README.md".equals(filePath)) {
                         // try the fall-back
                         return parseProjectModel(repository, "README.md");
@@ -275,7 +288,6 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             }
             return false;
         }
-
 
         private void consumeEnvironmentSection(Iterator<Node> iterator, ProjectModel.Builder builder) {
             if (discardTo(iterator, isEnvHeader)) {
@@ -392,26 +404,6 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
         }
     }
 
-    public static String getText(Node node) {
-        StringBuilder builder = new StringBuilder();
-        if (node instanceof TextNode) {
-            builder.append(TextNode.class.cast(node).getText());
-        } else {
-            for (Node n : node.getChildren()) {
-                if (n instanceof TextNode) {
-                    builder.append(TextNode.class.cast(n).getText());
-                } else if (n instanceof SuperNode) {
-                    builder.append(getText(n));
-                }
-            }
-        }
-        return builder.toString();
-    }
-
-    public static HeaderNode asHeaderNode(Node node) {
-        return HeaderNode.class.cast(node);
-    }
-
     private static class WithChild extends BaseMatcher<Node> {
         private final Matcher<? super Node> childMatcher;
 
@@ -503,17 +495,6 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
             super(substring.toLowerCase());
         }
 
-        @SuppressWarnings("IndexOfReplaceableByContains")
-        @Override
-        protected boolean evalSubstringOf(String s) {
-            return s.toLowerCase().indexOf(substring) >= 0;
-        }
-
-        @Override
-        protected String relationship() {
-            return "containing (ignore case)";
-        }
-
         /**
          * Creates a matcher that matches if the examined {@link String} contains the specified
          * {@link String} anywhere.
@@ -526,6 +507,17 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
         @Factory
         public static Matcher<String> containsStringIgnoreCase(String substring) {
             return new StringContainsIgnoreCase(substring);
+        }
+
+        @SuppressWarnings("IndexOfReplaceableByContains")
+        @Override
+        protected boolean evalSubstringOf(String s) {
+            return s.toLowerCase().indexOf(substring) >= 0;
+        }
+
+        @Override
+        protected String relationship() {
+            return "containing (ignore case)";
         }
 
     }

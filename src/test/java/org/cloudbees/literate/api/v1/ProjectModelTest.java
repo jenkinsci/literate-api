@@ -34,33 +34,35 @@ import static org.junit.Assert.assertThat;
 public class ProjectModelTest {
 
     @Test
-    public void smokes() {
+    public void smokes() throws ProjectModelBuildingException {
         assertThat(ProjectModel.builder().addBuild("mvn test").build().getBuildFor(
                 ExecutionEnvironment.any()), is(Collections.singletonList("mvn test")));
     }
 
     @Test
-    public void builderSmokes() {
+    public void builderSmokes() throws ProjectModelBuildingException {
         assertThat(ProjectModel.builder().addBuild("mvn test").build().getBuildFor(), is(Collections.singletonList("mvn test")));
     }
 
     @Test(expected = IllegalStateException.class)
-    public void buildCommandIsEnvSpecificOrGlobal() {
+    public void buildCommandIsEnvSpecificOrGlobal() throws ProjectModelBuildingException {
         ProjectModel.builder()
                 .addBuild(Collections.singleton("linux"), "mvn test")
                 .addBuild("mvn verify");
     }
 
     @Test(expected = IllegalStateException.class)
-    public void buildCommandIsEnvSpecificOrGlobal2() {
+    public void buildCommandIsEnvSpecificOrGlobal2() throws ProjectModelBuildingException {
         ProjectModel.builder()
                 .addBuild("mvn verify")
                 .addBuild(Collections.singleton("linux"), "mvn test");
     }
 
     @Test
-    public void envSpecific() {
+    public void envSpecific() throws ProjectModelBuildingException {
         ProjectModel model = ProjectModel.builder()
+                .addEnvironment("linux")
+                .addEnvironment("windows")
                 .addBuild(Collections.singleton("linux"), "mvn test")
                 .addBuild(Collections.singleton("windows"), "mvn.bat test").build();
         assertThat(model.getBuildFor(), nullValue());
