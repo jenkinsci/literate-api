@@ -30,9 +30,10 @@ import org.cloudbees.literate.spi.v1.ProjectModelBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * A source of {@link ProjectModel} instances. The source depends on what SPI implementations are available on the
@@ -62,6 +63,29 @@ public class ProjectModelSource {
      */
     public ProjectModelSource() {
         this(Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
+     * Returns the set of marker filename(s) that the source supports based on the supplied basename.
+     * The presence of a marker file in a project root indicates that the project root is worth attempting
+     * to {@link #submit(ProjectModelRequest)} (org.cloudbees.literate.api.v1.ProjectModelRequest)} against.
+     *
+     * @param basename the {@link org.cloudbees.literate.api.v1.ProjectModelRequest#getBaseName()}
+     * @return the set of marker filename(s).
+     */
+    @NonNull
+    public Set<String> markerFiles(@NonNull String basename) {
+        basename.getClass(); // throw NPE if null;
+        Set<String> result = new LinkedHashSet<String>();
+        List<ProjectModelBuilder> builders = new ArrayList<ProjectModelBuilder>();
+        for (ProjectModelBuilder builder : ServiceLoader.load(ProjectModelBuilder.class, classLoader)) {
+            builders.add(builder);
+        }
+        Collections.sort(builders, new ProjectModelBuilder.PriorityComparator());
+        for (ProjectModelBuilder builder : builders) {
+            result.addAll(builder.markerFiles(basename));
+        }
+        return result;
     }
 
     /**

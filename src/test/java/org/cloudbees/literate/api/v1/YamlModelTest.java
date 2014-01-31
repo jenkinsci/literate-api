@@ -71,7 +71,7 @@ public class YamlModelTest {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
     }
 
-    @Test(expected = PathNotFoundException.class)
+    @Test(expected = ProjectModelBuildingException.class)
     public void empty() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
     }

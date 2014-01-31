@@ -67,7 +67,7 @@ public class MarkdownModelTest {
         repository = new FilesystemRepository(projectRootDir);
     }
 
-    @Test(expected = PathNotFoundException.class)
+    @Test(expected = ProjectModelBuildingException.class)
     public void empty() throws Exception {
         new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
     }

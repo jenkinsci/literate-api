@@ -23,6 +23,7 @@
  */
 package org.cloudbees.literate.spi.v1;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.cloudbees.literate.api.v1.ProjectModel;
 import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
 import org.cloudbees.literate.api.v1.ProjectModelRequest;
@@ -31,7 +32,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.Set;
 
 /**
  * Service provider interface for {@link org.cloudbees.literate.api.v1.ProjectModelSource}.
@@ -46,6 +49,16 @@ public interface ProjectModelBuilder {
      * @throws ProjectModelBuildingException if the source repository does not yield a valid model.
      */
     ProjectModel build(ProjectModelRequest request) throws IOException, ProjectModelBuildingException;
+
+    /**
+     * Returns the marker filename(s) that the model builder supports based on the supplied basename.
+     * The presence of a marker file in a project root indicates that the project root is worth attempting
+     * to {@link #build(org.cloudbees.literate.api.v1.ProjectModelRequest)} against.
+     * @param basename the {@link org.cloudbees.literate.api.v1.ProjectModelRequest#getBaseName()}
+     * @return the set of marker filenames.
+     */
+    @NonNull
+    Collection<String> markerFiles(@NonNull String basename);
 
     /**
      * Annotation to allow defining the sequence amongst competing {@link ProjectModelBuilder} implementations.

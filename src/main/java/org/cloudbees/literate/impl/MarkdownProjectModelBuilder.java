@@ -23,6 +23,7 @@
  */
 package org.cloudbees.literate.impl;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.io.IOUtils;
 import org.cloudbees.literate.api.v1.ExecutionEnvironment;
 import org.cloudbees.literate.api.v1.ProjectModel;
@@ -52,6 +53,7 @@ import org.pegdown.ast.VerbatimNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -81,7 +83,20 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
      */
     //@Override
     public ProjectModel build(ProjectModelRequest request) throws IOException, ProjectModelBuildingException {
-        return new Parser(request).parseProjectModel(request.getRepository(), "." + request.getBaseName() + ".md");
+        for (String name : markerFiles(request.getBaseName())) {
+            if (request.getRepository().isFile(name)) {
+                return new Parser(request).parseProjectModel(request.getRepository(), name);
+            }
+        }
+        throw new ProjectModelBuildingException("Not a Markdown based literate project");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @NonNull
+    public Collection<String> markerFiles(@NonNull String basename) {
+        return Collections.singleton("." + basename + ".md");
     }
 
     /**

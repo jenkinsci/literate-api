@@ -23,6 +23,7 @@
  */
 package org.cloudbees.literate.impl;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.io.IOUtils;
 import org.cloudbees.literate.api.v1.ProjectModel;
 import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
@@ -34,6 +35,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -47,7 +49,7 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
      */
     //@Override
     public ProjectModel build(ProjectModelRequest request) throws IOException, ProjectModelBuildingException {
-        for (String name : Arrays.asList("." + request.getBaseName() + ".yml", ".travis.yml")) {
+        for (String name : markerFiles(request.getBaseName())) {
             if (request.getRepository().isFile(name)) {
                 InputStream stream = request.getRepository().get(name);
                 try {
@@ -68,4 +70,11 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
         throw new ProjectModelBuildingException("Not a YAML based literate project");
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @NonNull
+    public Collection<String> markerFiles(@NonNull String basename) {
+        return Arrays.asList("." + basename + ".yml", ".travis.yml");
+    }
 }
