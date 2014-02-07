@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -190,6 +191,24 @@ public class MarkdownModelTest {
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getEnvironments(), is(Collections.singletonList(ExecutionEnvironment.any())));
         assertThat(model.getBuildFor(ExecutionEnvironment.any()), is(contains(Matchers.containsString("mvn install"))));
+    }
+
+    @Test
+    public void parameters() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(
+                ProjectModelRequest.builder(repository).addTaskIds("task").build()
+        );
+        assertThat(model, Matchers.notNullValue());
+        assertThat(model.getBuild().getParameters(), Matchers
+                .allOf(
+                        hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java", "/usr/bin/java")),
+                        hasEntry("ANT_HOME", new Parameter("ANT_HOME", "The home directory of ANT", null))
+                ));
+        assertThat(model.getTask("task").getParameters(), Matchers
+                .allOf(
+                        hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java", null)),
+                        hasEntry("MAVEN_HOME", new Parameter("MAVEN_HOME", "The home directory of Maven", null))
+                ));
     }
 
 

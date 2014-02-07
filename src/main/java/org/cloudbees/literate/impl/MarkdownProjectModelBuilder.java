@@ -26,6 +26,7 @@ package org.cloudbees.literate.impl;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.io.IOUtils;
 import org.cloudbees.literate.api.v1.ExecutionEnvironment;
+import org.cloudbees.literate.api.v1.Parameter;
 import org.cloudbees.literate.api.v1.ProjectModel;
 import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
 import org.cloudbees.literate.api.v1.ProjectModelRequest;
@@ -42,6 +43,9 @@ import org.pegdown.Extensions;
 import org.pegdown.PegDownProcessor;
 import org.pegdown.ast.BulletListNode;
 import org.pegdown.ast.CodeNode;
+import org.pegdown.ast.DefinitionListNode;
+import org.pegdown.ast.DefinitionNode;
+import org.pegdown.ast.DefinitionTermNode;
 import org.pegdown.ast.HeaderNode;
 import org.pegdown.ast.ListItemNode;
 import org.pegdown.ast.Node;
@@ -77,14 +81,24 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
     /**
      * The {@link PegDownProcessor} extension flags to match GitHub's Markdown rules.
      */
-    private static final int GITHUB = Extensions.AUTOLINKS + Extensions.FENCED_CODE_BLOCKS + Extensions.HARDWRAPS;
+    private static final int GITHUB = Extensions.AUTOLINKS + Extensions.FENCED_CODE_BLOCKS + Extensions.HARDWRAPS
+            + Extensions.DEFINITIONS;
 
     public static String getText(Node node) {
+        return getTextUntil(node, null);
+    }
+
+    public static String getTextUntil(Node node, Node until) {
         StringBuilder builder = new StringBuilder();
-        if (node instanceof TextNode) {
+        if (node == until) {
+            // no-op
+        } else if (node instanceof TextNode) {
             builder.append(TextNode.class.cast(node).getText());
         } else {
             for (Node n : node.getChildren()) {
+                if (n == until) {
+                    break;
+                }
                 if (n instanceof TextNode) {
                     builder.append(TextNode.class.cast(n).getText());
                 } else if (n instanceof SuperNode) {
@@ -146,6 +160,10 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
          */
         private static final Matcher<Node> isCode = instanceOf(CodeNode.class);
         /**
+         * Matches a node that has code blocks.
+         */
+        private static final Matcher<Node> hasCode = new WithDescendant(isCode);
+        /**
          * Matches list items.
          */
         private static final Matcher<Node> isItem = allOf(instanceOf(ListItemNode.class), new WithChild(isRoot));
@@ -165,6 +183,19 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
          * Matches a node that has a verbatim descendant.
          */
         private static final Matcher<Node> hasVerbatim = new WithDescendant(isVerbatim);
+        /**
+         * Matches a node that is the term in a definition list.
+         */
+        private static final Matcher<Node> isDefinitionTerm = instanceOf(DefinitionTermNode.class);
+        /**
+         * Matches a node that is the definition in a definition list.
+         */
+        private static final Matcher<Node> isDefinition = instanceOf(DefinitionNode.class);
+        /**
+         * Matches a node that is a definition list.
+         */
+        private static final Matcher<Node> isDefinitionList = allOf(instanceOf(DefinitionListNode.class),
+                new WithChild(isDefinitionTerm), new WithChild(isDefinition));
         /**
          * Matches the environments section header.
          */
@@ -259,7 +290,46 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
                 if (isBullet.matches(node)) {
                     builder.addBuild(parseBuild(node.getChildren()));
                 }
+                if (isDefinitionList.matches(node)) {
+                    builder.addBuildParameters(parseDefinitions(node.getChildren()));
+                }
             }
+        }
+
+        private List<Parameter> parseDefinitions(List<Node> children) {
+            ArrayList<Parameter> result = new ArrayList<Parameter>();
+            DefinitionTermNode term = null;
+            for (Node node : children) {
+                if (isDefinitionTerm.matches(node)) {
+                    term = (DefinitionTermNode) node;
+                }
+                if (isDefinition.matches(node) && term != null) {
+                    String name;
+                    String defaultValue;
+                    if (hasCode.matches(term)) {
+                        Node code = null;
+                        for (Node c : term.getChildren()) {
+                            if (isCode.matches(c)) {
+                                code = c;
+                                break;
+                            }
+                        }
+                        name = getTextUntil(term, code);
+                        while (name.endsWith("=")) {
+                            name = name.substring(0, name.length() - 1);
+                        }
+                        defaultValue = code == null ? null : getText(code);
+                    } else {
+                        name = getText(term);
+                        defaultValue = null;
+                    }
+                    if (!name.isEmpty()) {
+                        result.add(new Parameter(name, getText(node), defaultValue));
+                    }
+                    term = null;
+                }
+            }
+            return result;
         }
 
         private void consumeTask(Iterator<Node> iterator, ProjectModel.Builder builder, String taskId) {
@@ -274,6 +344,10 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
                 if (isBullet.matches(node)) {
                     // discard
                 }
+                if (isDefinitionList.matches(node)) {
+                    builder.addTaskParameters(taskId.toLowerCase(), parseDefinitions(node.getChildren()));
+                }
+
             }
         }
 

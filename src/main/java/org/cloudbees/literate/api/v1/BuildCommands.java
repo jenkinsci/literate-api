@@ -25,7 +25,7 @@ package org.cloudbees.literate.api.v1;
 
 import net.jcip.annotations.Immutable;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,10 +55,34 @@ public class BuildCommands extends AbstractCommands {
      * Constructor.
      *
      * @param environment the environment that the command required.
-     * @param commands     the build command.
+     * @param commands    the build command.
      */
     public BuildCommands(ExecutionEnvironment environment, List<String> commands) {
         this(Collections.singletonMap(environment == null ? ExecutionEnvironment.any() : environment, commands));
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param commands   the build commands.
+     * @param parameters the parameters.
+     * @since 0.6
+     */
+    public BuildCommands(List<String> commands, List<Parameter> parameters) {
+        this(null, commands, parameters);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param environment the environment that the command required.
+     * @param commands    the build command.
+     * @param parameters  the parameters.
+     * @since 0.6
+     */
+    public BuildCommands(ExecutionEnvironment environment, List<String> commands, List<Parameter> parameters) {
+        this(Collections.singletonMap(environment == null ? ExecutionEnvironment.any() : environment, commands),
+                parameters);
     }
 
     /**
@@ -68,7 +92,19 @@ public class BuildCommands extends AbstractCommands {
      *                      commands.
      */
     public BuildCommands(Map<ExecutionEnvironment, List<String>> buildCommands) {
-        super(buildCommands);
+        this(buildCommands, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param buildCommands a map of environments to build commands, as each environment may have separate build
+     *                      commands.
+     * @param parameters    the parameters.
+     * @since 0.6
+     */
+    public BuildCommands(Map<ExecutionEnvironment, List<String>> buildCommands, List<Parameter> parameters) {
+        super(buildCommands, parameters);
     }
 
     /**
@@ -79,11 +115,14 @@ public class BuildCommands extends AbstractCommands {
      * @return the merged commands.
      */
     public static BuildCommands merge(BuildCommands cmd1, BuildCommands cmd2) {
-        Map<ExecutionEnvironment, List<String>> result = new LinkedHashMap<ExecutionEnvironment, List<String>>(cmd1.getCommands());
+        Map<ExecutionEnvironment, List<String>> result =
+                new LinkedHashMap<ExecutionEnvironment, List<String>>(cmd1.getCommands());
         for (Map.Entry<ExecutionEnvironment, List<String>> entry : cmd2.getCommands().entrySet()) {
             result.put(entry.getKey(), join(result.get(entry.getKey()), entry.getValue()));
         }
-        return new BuildCommands(result);
+        List<Parameter> parameters = new ArrayList<Parameter>(Parameter.toList(cmd1.getParameters()));
+        parameters.addAll(Parameter.toList(cmd2.getParameters()));
+        return new BuildCommands(result, parameters);
     }
 
 }

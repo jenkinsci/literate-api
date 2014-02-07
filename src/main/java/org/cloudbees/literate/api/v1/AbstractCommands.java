@@ -44,19 +44,37 @@ public abstract class AbstractCommands implements Serializable {
      * Ensure consistent serialization.
      */
     private static final long serialVersionUID = 1L;
-
     /**
      * The map of commands keyed by execution environment.
      */
     private final Map<ExecutionEnvironment, List<String>> commands;
+    /**
+     * The parameters.
+     * @since 0.6
+     */
+    @CheckForNull
+    private final Map<String, Parameter> parameters;
 
     /**
      * Constructor.
      *
      * @param buildCommands a map of environments to build commands, as each environment may have separate build
      *                      commands.
+     * @deprecated use {@link #AbstractCommands(java.util.Map, java.util.List)}
      */
+    @Deprecated
     protected AbstractCommands(Map<ExecutionEnvironment, List<String>> buildCommands) {
+        this(buildCommands, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param buildCommands a map of environments to build commands, as each environment may have separate build
+     *                      commands.
+     * @since 0.6
+     */
+    protected AbstractCommands(Map<ExecutionEnvironment, List<String>> buildCommands, List<Parameter> parameters) {
         Map<ExecutionEnvironment, List<String>> cmds = new LinkedHashMap<ExecutionEnvironment, List<String>>();
         if (buildCommands != null) {
             for (Map.Entry<ExecutionEnvironment, List<String>> entry : buildCommands.entrySet()) {
@@ -74,8 +92,22 @@ public abstract class AbstractCommands implements Serializable {
         }
 
         this.commands = Collections.unmodifiableMap(cmds);
+        this.parameters = Collections.unmodifiableMap(Parameter.toMap(parameters));
     }
 
+    @CheckForNull
+    public static List<String> join(@CheckForNull List<String> cmd1, @CheckForNull List<String> cmd2) {
+        if (cmd1 == null || cmd1.isEmpty()) {
+            return cmd2;
+        }
+        if (cmd2 == null || cmd2.isEmpty()) {
+            return cmd1;
+        }
+        List<String> result = new ArrayList<String>(cmd1.size() + cmd2.size());
+        result.addAll(cmd1);
+        result.addAll(cmd2);
+        return Collections.unmodifiableList(result);
+    }
 
     /**
      * Given an environment - return us the whole script for this section, based on a "best" environmental match.
@@ -102,18 +134,16 @@ public abstract class AbstractCommands implements Serializable {
         return commands;
     }
 
-    @CheckForNull
-    public static List<String> join(@CheckForNull List<String> cmd1, @CheckForNull List<String> cmd2) {
-        if (cmd1 == null || cmd1.isEmpty()) {
-            return cmd2;
-        }
-        if (cmd2 == null || cmd2.isEmpty()) {
-            return cmd1;
-        }
-        List<String> result = new ArrayList<String>(cmd1.size() + cmd2.size());
-        result.addAll(cmd1);
-        result.addAll(cmd2);
-        return Collections.unmodifiableList(result);
+    public Map<String, Parameter> getParameters() {
+        return parameters == null ? Collections.<String, Parameter>emptyMap() : parameters;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(getClass().getName());
+        sb.append("{commands=").append(commands);
+        sb.append("{parameters=").append(getParameters());
+        sb.append('}');
+        return sb.toString();
+    }
 }

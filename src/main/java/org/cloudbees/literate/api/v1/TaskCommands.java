@@ -40,16 +40,18 @@ public class TaskCommands extends AbstractCommands {
      * @param commands the command.
      */
     public TaskCommands(List<String> commands) {
-        super(Collections.singletonMap(ExecutionEnvironment.any(), commands));
+        this(commands, null);
     }
 
     /**
-     * Returns the command.
+     * Constructor.
      *
-     * @return the command.
+     * @param commands   the command.
+     * @param parameters the parameters.
+     * @since 0.6
      */
-    public List<String> getCommand() {
-        return getCommands().get(ExecutionEnvironment.any());
+    public TaskCommands(List<String> commands, List<Parameter> parameters) {
+        super(Collections.singletonMap(ExecutionEnvironment.any(), commands), parameters);
     }
 
     /**
@@ -60,6 +62,18 @@ public class TaskCommands extends AbstractCommands {
      * @return
      */
     public static TaskCommands merge(TaskCommands cmd1, TaskCommands cmd2) {
-        return new TaskCommands(join(cmd1.getCommand(), cmd2.getCommand()));
+        List<Parameter> parameters = Parameter.toList(cmd1.getParameters());
+        parameters.addAll(Parameter.toList(cmd2.getParameters()));
+
+        return new TaskCommands(join(cmd1.getCommand(), cmd2.getCommand()), parameters);
+    }
+
+    /**
+     * Returns the command.
+     *
+     * @return the command.
+     */
+    public List<String> getCommand() {
+        return getCommands().get(ExecutionEnvironment.any());
     }
 }

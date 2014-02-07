@@ -30,6 +30,7 @@ import net.jcip.annotations.NotThreadSafe;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -186,6 +187,11 @@ public class ProjectModel implements Serializable {
         private final Map<ExecutionEnvironment, List<String>> build =
                 new LinkedHashMap<ExecutionEnvironment, List<String>>();
         /**
+         * The build parameters.
+         */
+        @NonNull
+        private final List<Parameter> buildParameters = new ArrayList<Parameter>();
+        /**
          * The post-build tasks.
          */
         @NonNull
@@ -334,6 +340,54 @@ public class ProjectModel implements Serializable {
         }
 
         /**
+         * Adds the supplied parameter to the parameters of the build command.
+         *
+         * @param parameter the parameter.
+         * @return {@code this} for method chaining.
+         * @since 0.6
+         */
+        @NonNull
+        public Builder addBuildParameter(@CheckForNull Parameter parameter) {
+            if (parameter != null) {
+                buildParameters.add(parameter);
+            }
+            return this;
+        }
+
+        /**
+         * Adds the supplied parameters to the parameters of the build command.
+         *
+         * @param parameters the parameter.
+         * @return {@code this} for method chaining.
+         * @since 0.6
+         */
+        @NonNull
+        public Builder addBuildParameters(Parameter... parameters) {
+            for (Parameter parameter : parameters) {
+                addBuildParameter(parameter);
+            }
+            return this;
+        }
+
+        /**
+         * Adds the supplied parameters to the parameters of the build command.
+         *
+         * @param parameters the parameter.
+         * @return {@code this} for method chaining.
+         * @since 0.6
+         */
+        @NonNull
+        public Builder addBuildParameters(@CheckForNull Iterable<Parameter> parameters) {
+            if (parameters != null) {
+                for (Parameter parameter : parameters) {
+                    addBuildParameter(parameter);
+                }
+            }
+            return this;
+
+        }
+
+        /**
          * Adds the supplied task command.
          *
          * @param taskId  the task id.
@@ -375,6 +429,55 @@ public class ProjectModel implements Serializable {
         }
 
         /**
+         * Adds the supplied task parameter.
+         *
+         * @param taskId    the task id.
+         * @param parameter the task parameter.
+         * @return {@code this} for method chaining.
+         * @since 0.6
+         */
+        @NonNull
+        public Builder addTaskParameter(String taskId, Parameter parameter) {
+            return addTaskParameters(taskId, Collections.singletonList(parameter));
+        }
+
+        /**
+         * Adds the supplied task parameters.
+         *
+         * @param taskId     the task id.
+         * @param parameters the task parameters.
+         * @return {@code this} for method chaining.
+         * @since 0.6
+         */
+        @NonNull
+        public Builder addTaskParameters(String taskId, Parameter... parameters) {
+            return addTaskParameters(taskId, Arrays.asList(parameters));
+        }
+
+        /**
+         * Adds the supplied task parameters.
+         *
+         * @param taskId     the task id.
+         * @param parameters the task parameters.
+         * @return {@code this} for method chaining.
+         * @since 0.6
+         */
+        @NonNull
+        public Builder addTaskParameters(String taskId, Iterable<Parameter> parameters) {
+            List<Parameter> parameterList = new ArrayList<Parameter>();
+            for (Parameter parameter : parameters) {
+                parameterList.add(parameter);
+            }
+            TaskCommands commands = new TaskCommands(Collections.<String>emptyList(), parameterList);
+            if (this.tasks.containsKey(taskId)) {
+                this.tasks.put(taskId, TaskCommands.merge(this.tasks.get(taskId), commands));
+            } else {
+                this.tasks.put(taskId, commands);
+            }
+            return this;
+        }
+
+        /**
          * Builds the {@link ProjectModel} instance.
          *
          * @return the {@link ProjectModel} instance.
@@ -384,7 +487,7 @@ public class ProjectModel implements Serializable {
             ProjectModel model = new ProjectModel(environments.isEmpty()
                     ? Collections.singletonList(ExecutionEnvironment.any())
                     : environments,
-                    new BuildCommands(build),
+                    new BuildCommands(build, buildParameters),
                     tasks);
             model.checkValid();
             return model;
