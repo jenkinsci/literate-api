@@ -266,8 +266,8 @@ public class ProjectModelRequest {
         @NonNull
         public Builder addTaskId(@NonNull String taskId) {
             taskId.getClass();
-            if (!this.taskIds.contains(taskId)) {
-                this.taskIds.add(taskId);
+            if (!this.taskIds.contains(taskId.toLowerCase())) {
+                this.taskIds.add(taskId.toLowerCase());
             }
             return this;
         }
