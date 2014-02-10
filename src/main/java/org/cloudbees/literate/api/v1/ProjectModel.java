@@ -157,7 +157,7 @@ public class ProjectModel implements Serializable {
      */
     @CheckForNull
     public TaskCommands getTask(@CheckForNull String taskId) {
-        return taskId == null ? null : tasks.get(taskId);
+        return taskId == null ? null : tasks.get(taskId.toLowerCase());
     }
 
     /**
