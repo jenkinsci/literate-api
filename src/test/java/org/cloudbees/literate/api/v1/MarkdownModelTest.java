@@ -35,6 +35,7 @@ import org.junit.rules.TestName;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.contains;
@@ -201,14 +202,16 @@ public class MarkdownModelTest {
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuild().getParameters(), Matchers
                 .allOf(
-                        hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java", "/usr/bin/java")),
-                        hasEntry("ANT_HOME", new Parameter("ANT_HOME", "The home directory of ANT", null))
+                        hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java, defaults to /usr/bin/java", "/usr/bin/java", null)),
+                        hasEntry("ANT_HOME", new Parameter("ANT_HOME", "The home directory of ANT", null, null))
                 ));
         assertThat(model.getTask("task").getParameters(), Matchers
                 .allOf(
-                        hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java", null)),
-                        hasEntry("MAVEN_HOME", new Parameter("MAVEN_HOME", "The home directory of Maven", null))
-                ));
+                        hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java", null, null)),
+                        hasEntry("MAVEN_HOME", new Parameter("MAVEN_HOME", "The home directory of Maven, one of /opt/local/apache-maven-3.0.3, /opt/local/apache-maven-3.0.4, /opt/local/apache-maven-3.0.5, /opt/local/apache-maven-3.1.0, /opt/local/apache-maven-3.1.1", "/opt/local/apache-maven-3.0.3",
+                                Arrays.asList("/opt/local/apache-maven-3.0.3", "/opt/local/apache-maven-3.0.4",
+                                "/opt/local/apache-maven-3.0.5", "/opt/local/apache-maven-3.1.0", "/opt/local/apache-maven-3.1.1"))
+                )));
     }
 
 

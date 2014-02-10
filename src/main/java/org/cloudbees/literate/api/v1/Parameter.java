@@ -28,6 +28,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +60,12 @@ public class Parameter implements Serializable {
      */
     @CheckForNull
     private final String defaultValue;
+    /**
+     * An optional list of valid values that the parameter may take, if {@code null} then there is no
+     * a restriction to a finite set.
+     */
+    @CheckForNull
+    private final List<String> validValues;
 
     /**
      * Constructs a new parameter.
@@ -66,11 +74,19 @@ public class Parameter implements Serializable {
      * @param description  a human readable description of the parameter.
      * @param defaultValue an optional default value.
      */
-    public Parameter(@NonNull String name, @CheckForNull String description, @CheckForNull String defaultValue) {
+    public Parameter(@NonNull String name, @CheckForNull String description, @CheckForNull String defaultValue,
+                     @CheckForNull Collection<String> validValues) {
         name.getClass(); // throw NPE if null
         this.name = name;
         this.description = description == null || description.trim().length() == 0 ? null : description;
         this.defaultValue = defaultValue;
+        if (validValues == null || validValues.isEmpty()
+                || (defaultValue != null && validValues.size() == 1
+                && defaultValue.equals(validValues.iterator().next()))) {
+            this.validValues = null;
+        } else {
+            this.validValues = new ArrayList<String>(validValues);
+        }
     }
 
     /**
@@ -114,7 +130,7 @@ public class Parameter implements Serializable {
      * is supplied or if there is a {@link #defaultValue}.
      *
      * @return the name of the parameter. An environment variable with this name will be set in the command context
-     * if a value
+     *         if a value
      *         is supplied or if there is a {@link #defaultValue}.
      */
     @NonNull
@@ -137,11 +153,23 @@ public class Parameter implements Serializable {
      * provide a value.
      *
      * @return An optional default value to use if no value is provided by the user or if no user is present to
-     * provide a value.
+     *         provide a value.
      */
     @CheckForNull
     public String getDefaultValue() {
         return defaultValue;
+    }
+
+    /**
+     * Returns an optional list of valid values that the parameter may take, if {@code null} then there is no
+     * a restriction to a finite set.
+     *
+     * @return an optional list of valid values that the parameter may take, if {@code null} then there is no
+     *         a restriction to a finite set.
+     */
+    @CheckForNull
+    public List<String> getValidValues() {
+        return validValues == null ? null : Collections.unmodifiableList(validValues);
     }
 
     /**
@@ -153,6 +181,7 @@ public class Parameter implements Serializable {
         sb.append("name='").append(name).append('\'');
         sb.append(", description='").append(description).append('\'');
         sb.append(", defaultValue='").append(defaultValue).append('\'');
+        sb.append(", validValues=").append(validValues);
         sb.append('}');
         return sb.toString();
     }
@@ -171,13 +200,16 @@ public class Parameter implements Serializable {
 
         Parameter parameter = (Parameter) o;
 
+        if (!name.equals(parameter.name)) {
+            return false;
+        }
         if (defaultValue != null ? !defaultValue.equals(parameter.defaultValue) : parameter.defaultValue != null) {
             return false;
         }
         if (description != null ? !description.equals(parameter.description) : parameter.description != null) {
             return false;
         }
-        if (!name.equals(parameter.name)) {
+        if (validValues != null ? !validValues.equals(parameter.validValues) : parameter.validValues != null) {
             return false;
         }
 
@@ -189,9 +221,6 @@ public class Parameter implements Serializable {
      */
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + (description != null ? description.hashCode() : 0);
-        result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
-        return result;
+        return name.hashCode();
     }
 }

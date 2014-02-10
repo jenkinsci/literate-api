@@ -62,9 +62,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeSet;
 
 import static org.cloudbees.literate.impl.MarkdownProjectModelBuilder.StringContainsIgnoreCase.containsStringIgnoreCase;
@@ -304,27 +306,36 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
                     term = (DefinitionTermNode) node;
                 }
                 if (isDefinition.matches(node) && term != null) {
-                    String name;
-                    String defaultValue;
-                    if (hasCode.matches(term)) {
-                        Node code = null;
-                        for (Node c : term.getChildren()) {
-                            if (isCode.matches(c)) {
-                                code = c;
-                                break;
+                    String name = getText(term);
+                    String defaultValue = null;
+                    Set<String> validValues = null;
+                    if (hasCode.matches(node)) {
+                        Stack<Iterator<Node>> stack = new Stack<Iterator<Node>>();
+                        stack.push(node.getChildren().iterator());
+                        while (!stack.isEmpty()) {
+                            Iterator<Node> i = stack.pop();
+                            while (i.hasNext()) {
+                                Node c = i.next();
+                                if (isCode.matches(c)) {
+                                    String text = getText(c);
+                                    if (defaultValue == null) {
+                                        defaultValue = text;
+                                    } else if (validValues == null) {
+                                        validValues = new LinkedHashSet<String>();
+                                        validValues.add(defaultValue);
+                                        validValues.add(text);
+                                    } else {
+                                        validValues.add(text);
+                                    }
+                                } else if (!c.getChildren().isEmpty()) {
+                                    stack.push(i);
+                                    i = c.getChildren().iterator();
+                                }
                             }
                         }
-                        name = getTextUntil(term, code);
-                        while (name.endsWith("=")) {
-                            name = name.substring(0, name.length() - 1);
-                        }
-                        defaultValue = code == null ? null : getText(code);
-                    } else {
-                        name = getText(term);
-                        defaultValue = null;
                     }
                     if (!name.isEmpty()) {
-                        result.add(new Parameter(name, getText(node), defaultValue));
+                        result.add(new Parameter(name, getText(node), defaultValue, validValues));
                     }
                     term = null;
                 }
