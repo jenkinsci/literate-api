@@ -50,6 +50,7 @@ public abstract class AbstractCommands implements Serializable {
     private final Map<ExecutionEnvironment, List<String>> commands;
     /**
      * The parameters.
+     *
      * @since 0.6
      */
     @CheckForNull

@@ -34,7 +34,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Set;
 
 /**
  * Service provider interface for {@link org.cloudbees.literate.api.v1.ProjectModelSource}.
@@ -54,6 +53,7 @@ public interface ProjectModelBuilder {
      * Returns the marker filename(s) that the model builder supports based on the supplied basename.
      * The presence of a marker file in a project root indicates that the project root is worth attempting
      * to {@link #build(org.cloudbees.literate.api.v1.ProjectModelRequest)} against.
+     *
      * @param basename the {@link org.cloudbees.literate.api.v1.ProjectModelRequest#getBaseName()}
      * @return the set of marker filenames.
      */

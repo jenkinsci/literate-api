@@ -25,7 +25,6 @@ package org.cloudbees.literate.impl.yaml;
 
 import org.cloudbees.literate.api.v1.ProjectModel;
 import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
-import org.cloudbees.literate.api.v1.ProjectModelValidationException;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 
 import java.io.IOException;

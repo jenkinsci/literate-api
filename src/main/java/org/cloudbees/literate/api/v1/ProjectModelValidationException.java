@@ -24,7 +24,8 @@
 package org.cloudbees.literate.api.v1;
 
 /**
- * Thrown when a {@link org.cloudbees.literate.api.v1.ProjectModel} is invalid the violation of a project model invariant.
+ * Thrown when a {@link org.cloudbees.literate.api.v1.ProjectModel} is invalid the violation of a project model
+ * invariant.
  */
 public class ProjectModelValidationException extends ProjectModelBuildingException {
 
