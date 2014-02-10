@@ -24,7 +24,6 @@
 package org.cloudbees.literate.api.v1;
 
 import org.cloudbees.literate.api.v1.vfs.FilesystemRepository;
-import org.cloudbees.literate.api.v1.vfs.PathNotFoundException;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -40,7 +39,6 @@ import java.util.Collections;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
@@ -50,9 +48,7 @@ import static org.junit.Assume.assumeThat;
 public class MarkdownModelTest {
     @Rule
     public TestName name = new TestName();
-
     public File projectRootDir;
-
     public ProjectRepository repository;
 
     @Before
@@ -100,10 +96,10 @@ public class MarkdownModelTest {
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuildFor("ruby"), contains(Matchers.containsString("rake build"),
                 Matchers.containsString("rake clean")));
-        assertThat(model.getBuildFor("ruby"), not(Matchers.<String>hasItem(Matchers.containsString("note in the middle"))));
+        assertThat(model.getBuildFor("ruby"),
+                not(Matchers.<String>hasItem(Matchers.containsString("note in the middle"))));
         assertThat(model.getBuildFor("ruby"), not(Matchers.<String>hasItem(Matchers.containsString("Smell"))));
     }
-
 
     @Test
     public void backTickCommands() throws Exception {
@@ -111,7 +107,6 @@ public class MarkdownModelTest {
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuildFor("java"), contains(Matchers.containsString("mvn verify")));
     }
-
 
     @Test
     public void badBuildSection() throws Exception {
@@ -123,7 +118,6 @@ public class MarkdownModelTest {
                     Matchers.containsString("Cannot have a global command and environment specific commands"));
         }
     }
-
 
     @Test
     public void defaultSimplest() throws Exception {
@@ -150,7 +144,6 @@ public class MarkdownModelTest {
         assertThat(model.getTask("promote").getCommand(), contains(Matchers.containsString("super")));
 
     }
-
 
     @Test
     public void showcase() throws Exception {
@@ -202,16 +195,23 @@ public class MarkdownModelTest {
         assertThat(model, Matchers.notNullValue());
         assertThat(model.getBuild().getParameters(), Matchers
                 .allOf(
-                        hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java, defaults to /usr/bin/java", "/usr/bin/java", null)),
+                        hasEntry("JAVA_HOME",
+                                new Parameter("JAVA_HOME", "The home directory of Java, defaults to /usr/bin/java",
+                                        "/usr/bin/java", null)),
                         hasEntry("ANT_HOME", new Parameter("ANT_HOME", "The home directory of ANT", null, null))
                 ));
         assertThat(model.getTask("task").getParameters(), Matchers
                 .allOf(
                         hasEntry("JAVA_HOME", new Parameter("JAVA_HOME", "The home directory of Java", null, null)),
-                        hasEntry("MAVEN_HOME", new Parameter("MAVEN_HOME", "The home directory of Maven, one of /opt/local/apache-maven-3.0.3, /opt/local/apache-maven-3.0.4, /opt/local/apache-maven-3.0.5, /opt/local/apache-maven-3.1.0, /opt/local/apache-maven-3.1.1", "/opt/local/apache-maven-3.0.3",
+                        hasEntry("MAVEN_HOME", new Parameter("MAVEN_HOME",
+                                "The home directory of Maven, one of /opt/local/apache-maven-3.0.3, "
+                                        + "/opt/local/apache-maven-3.0.4, /opt/local/apache-maven-3.0.5, "
+                                        + "/opt/local/apache-maven-3.1.0, /opt/local/apache-maven-3.1.1",
+                                "/opt/local/apache-maven-3.0.3",
                                 Arrays.asList("/opt/local/apache-maven-3.0.3", "/opt/local/apache-maven-3.0.4",
-                                "/opt/local/apache-maven-3.0.5", "/opt/local/apache-maven-3.1.0", "/opt/local/apache-maven-3.1.1"))
-                )));
+                                        "/opt/local/apache-maven-3.0.5", "/opt/local/apache-maven-3.1.0",
+                                        "/opt/local/apache-maven-3.1.1"))
+                        )));
     }
 
 
