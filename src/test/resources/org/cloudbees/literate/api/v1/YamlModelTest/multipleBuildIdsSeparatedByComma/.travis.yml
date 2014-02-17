@@ -1,0 +1,2 @@
+build: echo Hello world
+build2: echo I'm building too!

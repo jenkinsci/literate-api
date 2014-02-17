@@ -1,0 +1,8 @@
+environments:
+  - [linux]
+  - [windows]
+
+build:
+  linux: echo linux
+  windows: echo windows
+build2: echo I'm building too!

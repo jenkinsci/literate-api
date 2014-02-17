@@ -1,0 +1,2 @@
+environments: linux
+build: echo Hello world

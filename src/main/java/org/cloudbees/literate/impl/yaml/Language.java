@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc.
+ * Copyright (c) 2013-2014, CloudBees, Inc., Amadeus IT Group
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,34 @@
  */
 package org.cloudbees.literate.impl.yaml;
 
-import org.cloudbees.literate.api.v1.ProjectModel;
-import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
-import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+
+import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 
 /**
  * @author Stephen Connolly
  */
 public interface Language {
 
+    /**
+     * Returns the set of supported languages.
+     *
+     * @return the set of supported languages.
+     */
     Set<String> supported();
 
-    ProjectModel build(Map<String, Object> model, ProjectRepository repository)
-            throws IOException, ProjectModelBuildingException;
+    /**
+     * Decorate the input model with conventions of this implementation of
+     * language
+     *
+     * @param model
+     *            the input model
+     * @param repository
+     *            a handle to the project repository in case
+     * @return the decorated model
+     * @throws IOException
+     */
+    Map<String, Object> decorate(Map<String, Object> model, ProjectRepository repository) throws IOException;
 }
