@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc.
+ * Copyright (c) 2013-2014, CloudBees, Inc., Amadeus IT Group
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,23 @@
  */
 package org.cloudbees.literate.api.v1;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeThat;
+
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
+
 import org.cloudbees.literate.api.v1.vfs.FilesystemRepository;
-import org.cloudbees.literate.api.v1.vfs.PathNotFoundException;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assume.assumeThat;
 
 public class YamlModelTest {
 
@@ -76,5 +78,119 @@ public class YamlModelTest {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
     }
 
+
+    @Test
+    public void javaAnt() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatBuildHasFollowingCommands(model, "ant test");
+    }
+
+    @Test
+    public void javaGradle() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatBuildHasFollowingCommands(model, "gradle assemble", "gradle check");
+    }
+
+    @Test
+    public void javaMaven() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatBuildHasFollowingCommands(model, "mvn test");
+    }
+
+
+    @Test
+    public void environment() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        ExecutionEnvironment environment = new ExecutionEnvironment("java-1.7", "windows");
+        assertThatBuildHasFollowingCommands(model, environment, "echo java-1.7 on windows");
+
+        ExecutionEnvironment environment_windows = new ExecutionEnvironment("java-1.6", "windows");
+        assertThatBuildHasFollowingCommands(model, environment_windows, "echo java-1.6 on windows");
+
+        ExecutionEnvironment environment_linux = new ExecutionEnvironment("linux");
+        assertThatBuildHasFollowingCommands(model, environment_linux, "echo linux");
+
+        assertThatTaskHasFollowingCommands(model, "mycommand", "echo mycommand");
+    }
+
+    @Test
+    public void parseMapEnvironments() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatBuildHasFollowingEnvironment(model, new ExecutionEnvironment("windows", "java 1.7", "maven 3.0.5"), new ExecutionEnvironment("windows",
+                "java 1.7", "maven 3.1"), new ExecutionEnvironment("windows", "java 1.6"), new ExecutionEnvironment("linux"));
+
+    }
+
+    @Test(expected = ProjectModelBuildingException.class)
+    public void noBuildCommand() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+    }
+
+    @Test
+    public void multipleBuildIdsSeparatedByComma() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).withBuildId("build, build2").build());
+        assertThatBuildHasFollowingCommands(model, "echo Hello world", "echo I'm building too!");
+    }
+
+    @Test
+    public void multipleBuildIdsSeparatedBySpace() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).withBuildId("build build2").build());
+        assertThatBuildHasFollowingCommands(model, "echo Hello world", "echo I'm building too!");
+    }
+
+    @Test
+    public void multipleBuildIdsMultipleEnvironments() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).withBuildId("build, build2").build());
+        assertThatBuildHasFollowingCommands(model, new ExecutionEnvironment("linux"), "echo linux", "echo I'm building too!");
+        assertThatBuildHasFollowingCommands(model, new ExecutionEnvironment("windows"), "echo windows", "echo I'm building too!");
+    }
+
+    @Test
+    public void simpleEnvironment() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatBuildHasFollowingEnvironment(model, new ExecutionEnvironment("linux"));
+    }
+
+    @Test
+    public void simpleList() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatBuildHasFollowingEnvironment(model, new ExecutionEnvironment("windows", "java-1.7", "maven-3.0.5"));
+    }
+
+    private void assertThatBuildHasFollowingCommands(ProjectModel model, ExecutionEnvironment environment, String... commands) {
+        BuildCommands buildCommand = model.getBuild();
+        List<String> buildMatchingCommands = buildCommand.getMatchingCommand(environment);
+        assertNotNull("No matching commands for " + environment, buildMatchingCommands);
+        assertEquals(commands.length, buildMatchingCommands.size());
+        for (int i = 0; i < commands.length; i++) {
+            assertEquals(commands[i], buildMatchingCommands.get(i));
+        }
+    }
+
+    private void assertThatBuildHasFollowingCommands(ProjectModel model, String... commands) {
+        BuildCommands buildCommand = model.getBuild();
+        List<String> buildMatchingCommands = buildCommand.getMatchingCommand(new ExecutionEnvironment());
+        assertEquals(commands.length, buildMatchingCommands.size());
+        for (int i = 0; i < commands.length; i++) {
+            assertEquals(commands[i], buildMatchingCommands.get(i));
+        }
+    }
+
+    private void assertThatTaskHasFollowingCommands(ProjectModel model, String task, String... commands) {
+        TaskCommands taskCommand = model.getTask(task);
+        List<String> taskMatchingCommands = taskCommand.getMatchingCommand(new ExecutionEnvironment());
+        assertEquals(commands.length, taskMatchingCommands.size());
+        for (int i = 0; i < commands.length; i++) {
+            assertEquals(commands[i], taskMatchingCommands.get(i));
+        }
+    }
+
+    private void assertThatBuildHasFollowingEnvironment(ProjectModel model, ExecutionEnvironment... environments) {
+        List<ExecutionEnvironment> buildMatchingEnvironment = model.getEnvironments();
+        assertEquals(environments.length, buildMatchingEnvironment.size());
+        for (int i = 0; i < environments.length; i++) {
+            assertEquals(environments[i], buildMatchingEnvironment.get(i));
+        }
+    }
 
 }

@@ -1,0 +1,13 @@
+environments:
+   - [windows, java-1.6]
+   - [windows, java-1.7]
+   - linux
+
+build:
+    windows:
+      java-1.6: echo java-1.6 on windows
+      java-1.7: echo java-1.7 on windows
+    linux: echo linux
+
+mycommand: echo mycommand
+

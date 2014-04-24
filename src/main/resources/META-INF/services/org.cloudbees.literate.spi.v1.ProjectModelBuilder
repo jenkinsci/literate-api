@@ -1,7 +1,7 @@
 #
 # The MIT License
 #
-# Copyright (c) 2013, CloudBees, Inc.
+# Copyright (c) 2013-2014, CloudBees, Inc., Amadeus IT Group
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,5 +23,4 @@
 #
 
 org.cloudbees.literate.impl.MarkdownProjectModelBuilder
-# TODO uncomment Yaml when it is ready
-#org.cloudbees.literate.impl.YamlProjectModelBuilder
+org.cloudbees.literate.impl.YamlProjectModelBuilder
