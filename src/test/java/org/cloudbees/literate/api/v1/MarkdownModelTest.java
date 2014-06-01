@@ -187,6 +187,12 @@ public class MarkdownModelTest {
         assertThat(model.getBuildFor(ExecutionEnvironment.any()), is(contains(Matchers.containsString("mvn install"))));
     }
 
+    @Test(expected=ProjectModelValidationException.class)
+    public void noBuildCommand() throws Exception {
+        new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        fail("The project parsing should throw an exception");
+    }
+
     @Test
     public void parameters() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(
