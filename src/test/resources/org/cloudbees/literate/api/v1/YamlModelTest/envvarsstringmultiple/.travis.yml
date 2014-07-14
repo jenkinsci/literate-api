@@ -1,0 +1,2 @@
+env: FOO=BAR ALPHA=BETA
+build: echo foo

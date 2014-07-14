@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -79,11 +80,13 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
 
     private final String[] buildIds;
     private final String environmentsId;
+    private final String envvarsId;
     private final String languageId;
 
     public Parser(@NonNull ProjectModelRequest request) {
       this.buildIds = request.getBuildId().split("[, ]");
       this.environmentsId = request.getEnvironmentsId();
+      this.envvarsId = request.getEnvvarsId();
       this.languageId = "language";
     }
 
@@ -153,7 +156,8 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
     private ProjectModel internalBuild(Map<String, Object> model) throws ProjectModelBuildingException {
       Builder builder = ProjectModel.builder();
 
-      List<ExecutionEnvironment> environments = consumeEnvironmentSection(model);
+    List<ExecutionEnvironment> environments = consumeEnvironmentSection(model);
+    environments = decorateWithEnvironmentVariables(environments, model);
       builder.addEnvironments(environments);
 
       Map<ExecutionEnvironment, List<String>> build = new HashMap<ExecutionEnvironment, List<String>>();
@@ -173,6 +177,67 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
       addTasks(builder, model);
       return builder.build();
     }
+	
+    private List<ExecutionEnvironment> decorateWithEnvironmentVariables(List<ExecutionEnvironment> environments, Map<String, Object> model) {
+        List<ExecutionEnvironment> result = new ArrayList<ExecutionEnvironment>();
+        Map<String, String> envvars = consumeEnvSection(model);
+
+        for (ExecutionEnvironment executionEnvironment : environments) {
+            result.add(executionEnvironment.withVariables(envvars));
+        }
+        return result;
+    }
+
+    private Map<String, String> consumeEnvSection(Map<String, Object> model) {
+        Object object = model.get(envvarsId);
+        Map<String, String> envvars;
+        if (object instanceof String) {
+            String string = (String) object;
+            envvars = parseGlobalEnv(string);
+        } else if (object instanceof Map) {
+            Map map = (Map) object;
+            Object globalValues = map.get("global");
+            envvars = parseGlobalEnv(globalValues);
+        } else {
+            envvars = Collections.emptyMap();
+        }
+        return envvars;
+    }
+
+    private Map<String, String> parseGlobalEnv(Object globalValues) {
+        Map<String, String> result = new HashMap<String, String>();
+        if (globalValues instanceof Collection) {
+            Collection collection = (Collection) globalValues;
+            result = parseGlobalEnv(collection);
+        } else if (globalValues instanceof String) {
+            String string = (String) globalValues;
+            result = parseGlobalEnv(string);
+        }
+        return result;
+    }
+
+    private Map<String, String> parseGlobalEnv(Collection collection) {
+        Map<String, String> result = new HashMap<String, String>();
+        for (Object object : collection) {
+            assert object instanceof String : "Only simple lists of strings are supported";
+            String s = (String) object;
+            result.putAll(parseGlobalEnv(s));
+        }
+        return result;
+    }
+
+    private Map<String, String> parseGlobalEnv(String s) {
+        Map<String, String> result = new HashMap<String, String>();
+        String[] split = s.split(" ");
+        for (String string : split) {
+            String[] split2 = string.split("=", 2);
+            assert split2.length == 2 : "Properties must have format KEY=VALUE";
+            result.put(split2[0], split2[1]);
+        }
+        return result;
+    }
+
+
 
     /**
      * @param model The input model

@@ -27,12 +27,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeThat;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 import org.cloudbees.literate.api.v1.vfs.FilesystemRepository;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
@@ -121,6 +123,33 @@ public class YamlModelTest {
 
     }
 
+    @Test
+    public void envvarsstring() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+    }
+
+    @Test
+    public void envvarsstringmultiple() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "ALPHA", "BETA");
+    }
+
+    @Test
+    public void envvarsglobalmap() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "ALPHA", "BETA");
+    }
+
+    @Test
+    public void envvarsglobalmaplist() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "ALPHA", "BETA");
+    }
+
     @Test(expected = ProjectModelBuildingException.class)
     public void noBuildCommand() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
@@ -191,6 +220,12 @@ public class YamlModelTest {
         for (int i = 0; i < environments.length; i++) {
             assertEquals(environments[i], buildMatchingEnvironment.get(i));
         }
+    }
+
+    private void assertThatEnvvarIsEqualTo(ProjectModel model, ExecutionEnvironment env, String key, String value) {
+        Map<String, String> map = model.getEnvironmentVariablesFor(env);
+        assertTrue("Key not found : " + key, map.containsKey(key));
+        assertEquals("Value incorrect for " + key, value, map.get(key));
     }
 
 }

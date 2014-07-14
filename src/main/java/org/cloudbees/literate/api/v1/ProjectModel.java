@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc.
+ * Copyright (c) 2013-2014, CloudBees, Inc., Amadeus IT Group
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -168,6 +168,20 @@ public class ProjectModel implements Serializable {
     @NonNull
     public List<ExecutionEnvironment> getEnvironments() {
         return environments;
+    }
+
+    /**
+     * Return the environment variables that apply to the given execution environment.
+     * 
+     * @return the environment variables that apply to the given execution environment.
+     */
+    public Map<String, String> getEnvironmentVariablesFor(ExecutionEnvironment environment) {
+        for (ExecutionEnvironment env : environments) {
+            if (env.isMatchFor(environment)) {
+                return env.getVariables();
+            }
+        }
+        return Collections.emptyMap();
     }
 
     /**
