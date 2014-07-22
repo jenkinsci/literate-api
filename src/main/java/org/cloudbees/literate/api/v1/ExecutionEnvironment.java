@@ -37,7 +37,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * Represents an environment for execution of a series of commands.
@@ -45,7 +50,7 @@ import java.util.TreeSet;
  * @author Stephen Connolly
  */
 @Immutable
-public class ExecutionEnvironment implements Serializable {
+public class ExecutionEnvironment implements Serializable, Comparable<ExecutionEnvironment> {
 
     /**
      * Ensure consistent serialization.
@@ -155,6 +160,15 @@ public class ExecutionEnvironment implements Serializable {
     }
 
     /**
+     * Returns the components (labels, variables) that define the environment.
+     * 
+     * @return the components (labels, variables) that define the environment.
+     */
+    public Set<String> getComponents() {
+      return Sets.union(labels, getVariablesAsSet());
+    }
+
+    /**
      * Returns the labels that define the environment.
      *
      * @return the labels that define the environment.
@@ -162,6 +176,20 @@ public class ExecutionEnvironment implements Serializable {
     @NonNull
     public Set<String> getLabels() {
         return labels;
+    }
+    
+    @NonNull
+    public String getDescription() {
+        return join("[",Joiner.on(',').join(getComponents()),"]");
+    }
+
+    @NonNull
+    private String join(String... str) {
+        StringBuilder sb = new StringBuilder();
+        for (String string : str) {
+            sb.append(string);
+        }
+        return sb.toString();
     }
 
     /**
@@ -172,14 +200,22 @@ public class ExecutionEnvironment implements Serializable {
     public Map<String, String> getVariables() {
         return variables;
     }
+    
+    private Set<String> getVariablesAsSet() {
+        Set<String> result = Sets.newTreeSet();
+        for (Entry<String, String> entry : variables.entrySet()) {
+          result.add(entry.getKey() + "=" + entry.getValue());
+        }
+        return result;
+    }
 
     /**
-     * Returns {@code true} if the environment does not specify any labels.
+     * Returns {@code true} if the environment does not specify any labels nor environment variables.
      *
-     * @return {@code true} if the environment does not specify any labels.
+     * @return {@code true} if the environment does not specify any labels nor environment variables.
      */
     public boolean isUnspecified() {
-        return labels.isEmpty();
+        return labels.isEmpty() && variables.isEmpty();
     }
 
     /**
@@ -190,7 +226,8 @@ public class ExecutionEnvironment implements Serializable {
      *         environment.
      */
     public boolean isMatchFor(ExecutionEnvironment environment) {
-        return getLabels().containsAll(environment.getLabels());
+        return getLabels().containsAll(environment.getLabels()) &&
+                Maps.difference(getVariables(), environment.getVariables()).entriesOnlyOnRight().isEmpty();
     }
 
     /**
@@ -249,7 +286,7 @@ public class ExecutionEnvironment implements Serializable {
     public String toString() {
         final StringBuilder sb = new StringBuilder("ExecutionEnvironment{");
         sb.append("labels=").append(labels);
-        sb.append("variables=").append(variables);
+        sb.append(",variables=").append(variables);
         sb.append('}');
         return sb.toString();
     }
@@ -314,6 +351,12 @@ public class ExecutionEnvironment implements Serializable {
      */
     public static ExecutionEnvironment any() {
         return ANY_EXECUTION_ENVIRONMENT;
+    }
+
+    @Override
+    public int compareTo(ExecutionEnvironment o) {
+        if (o == null) return 1;
+        return toString().compareTo(o.toString());
     }
 
 }

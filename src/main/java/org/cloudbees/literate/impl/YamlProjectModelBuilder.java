@@ -32,8 +32,10 @@ import org.cloudbees.literate.api.v1.ProjectModelBuildingException;
 import org.cloudbees.literate.api.v1.ProjectModelRequest;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
 import org.cloudbees.literate.impl.yaml.Language;
+import org.cloudbees.literate.impl.yaml.environment.EnvironmentDecorator;
 import org.cloudbees.literate.spi.v1.ProjectModelBuilder;
 import org.yaml.snakeyaml.Yaml;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * A {@link ProjectModelBuilder} that uses a YAML file as the source of its
@@ -180,63 +183,74 @@ public class YamlProjectModelBuilder implements ProjectModelBuilder {
             return builder.build();
         }
 
-        private List<ExecutionEnvironment> decorateWithEnvironmentVariables(List<ExecutionEnvironment> environments, Map<String, Object> model) {
-            List<ExecutionEnvironment> result = new ArrayList<ExecutionEnvironment>();
-            Map<String, String> envvars = consumeEnvSection(model);
-
-            for (ExecutionEnvironment executionEnvironment : environments) {
-                result.add(executionEnvironment.withVariables(envvars));
-            }
-            return result;
-        }
-
-        private Map<String, String> consumeEnvSection(Map<String, Object> model) {
+        private List<ExecutionEnvironment> decorateWithEnvironmentVariables(List<ExecutionEnvironment> environments, Map<String, Object> model)
+                throws ProjectModelBuildingException {
+            List<ExecutionEnvironment> result = new ArrayList<ExecutionEnvironment>(environments);
             Object object = model.get(envvarsId);
-            Map<String, String> envvars;
             if (object instanceof String) {
-                String string = (String) object;
-                envvars = parseGlobalEnv(string);
+                result = applyDecorators(result, Collections.singleton((String) object), "matrix");
             } else if (object instanceof Map) {
-                Map map = (Map) object;
-                Object globalValues = map.get("global");
-                envvars = parseGlobalEnv(globalValues);
-            } else {
-                envvars = Collections.emptyMap();
-            }
-            return envvars;
-        }
-
-        private Map<String, String> parseGlobalEnv(Object globalValues) {
-            Map<String, String> result = new HashMap<String, String>();
-            if (globalValues instanceof Collection) {
-                Collection collection = (Collection) globalValues;
-                result = parseGlobalEnv(collection);
-            } else if (globalValues instanceof String) {
-                String string = (String) globalValues;
-                result = parseGlobalEnv(string);
+                Map<String, Object> map = checkMap((Map) object);
+                for (Entry<String, Object> entry : map.entrySet()) {
+                    Collection<String> variables;
+                    String key = entry.getKey();
+                    Object value = entry.getValue();
+                    if (value instanceof Collection) {
+                        variables = checkCollection((Collection) value);
+                    } else if (value instanceof String) {
+                        variables = Collections.singleton((String) value);
+                    } else {
+                        throw invalidEnvironmentModel(map);
+                    }
+                    result = applyDecorators(result, variables, key);
+                }
             }
             return result;
         }
 
-        private Map<String, String> parseGlobalEnv(Collection collection) {
-            Map<String, String> result = new HashMap<String, String>();
-            for (Object object : collection) {
-                assert object instanceof String : "Only simple lists of strings are supported";
-                String s = (String) object;
-                result.putAll(parseGlobalEnv(s));
+        private List<ExecutionEnvironment> applyDecorators(List<ExecutionEnvironment> envs, Collection<String> variables, String sectionName) {
+            List<ExecutionEnvironment> input = new ArrayList<ExecutionEnvironment>(envs);
+            List<ExecutionEnvironment> output = new ArrayList<ExecutionEnvironment>();
+            ServiceLoader<EnvironmentDecorator> decorators = ServiceLoader.load(EnvironmentDecorator.class, getClass().getClassLoader());
+            for (EnvironmentDecorator decorator : decorators) {
+                if (decorator.acceptSection(sectionName)) {
+                    for (ExecutionEnvironment e : input) {
+                        output.addAll(decorator.decorate(e, variables));
+                    }
+                    input = output;
+                }
             }
-            return result;
+            return output;
         }
 
-        private Map<String, String> parseGlobalEnv(String s) {
-            Map<String, String> result = new HashMap<String, String>();
-            String[] split = s.split(" ");
-            for (String string : split) {
-                String[] split2 = string.split("=", 2);
-                assert split2.length == 2 : "Properties must have format KEY=VALUE";
-                result.put(split2[0], split2[1]);
+        private Collection<String> checkCollection(Collection raw) throws ProjectModelBuildingException {
+            for (Object object : raw) {
+                if (!(object instanceof String)) {
+                    throw invalidEnvironmentModel(raw);
+                }
             }
-            return result;
+            return raw;
+        }
+
+        private Map<String, Object> checkMap(Map rawMap) throws ProjectModelBuildingException {
+            Set entrySet = rawMap.entrySet();
+            for (Object object : entrySet) {
+                Entry e = (Entry) object;
+                if (!(e.getKey() instanceof String)) {
+                    throw invalidEnvironmentModel(rawMap);
+                }
+            }
+            return rawMap;
+        }
+
+        private ProjectModelBuildingException invalidEnvironmentModel(Collection rawCollection) {
+            // TODO: Make a better error message
+            return new ProjectModelBuildingException("Specified environment variables are invalid.");
+        }
+
+        private ProjectModelBuildingException invalidEnvironmentModel(Map rawMap) {
+            // TODO: Make a better error message
+            return new ProjectModelBuildingException("Specified environment variables are invalid.");
         }
 
         /**
