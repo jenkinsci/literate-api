@@ -71,6 +71,13 @@ public class ProjectModelRequest {
     private final String environmentsId;
 
     /**
+     * The id of the environment variables section within the source model. The builder may ignore this part of the request if
+     * the source format does not permit customization of the id of the environment variables list.
+     */
+    @NonNull
+    private final String envvarsId;
+
+    /**
      * The id of the build instructions within the source model. The builder may ignore this part of the request if
      * the source format does not permit customization of the id of build instructions.
      */
@@ -96,6 +103,7 @@ public class ProjectModelRequest {
     private ProjectModelRequest(@CheckForNull String baseName,
                                 @NonNull ProjectRepository repository,
                                 @CheckForNull String environmentsId,
+                                @CheckForNull String envvarsId,
                                 @CheckForNull String buildId,
                                 @NonNull List<String> taskIds) {
         repository.getClass();
@@ -106,6 +114,7 @@ public class ProjectModelRequest {
         this.taskIds = taskIds.isEmpty()
                 ? Collections.singleton("deploy")
                 : Collections.unmodifiableSet(new TreeSet<String>(taskIds));
+        this.envvarsId = envvarsId == null ? "env" : envvarsId;
     }
 
     /**
@@ -138,6 +147,16 @@ public class ProjectModelRequest {
         return environmentsId;
     }
 
+    /**
+     * Gets the id of the environments variables section within the source model.
+     *
+     * @return the id of the environments variables section within the source model
+     */
+    @NonNull
+    public String getEnvvarsId() {
+        return envvarsId;
+    }
+    
     /**
      * Returns the project repository to construct the project model from.
      *
@@ -198,6 +217,13 @@ public class ProjectModelRequest {
         private String environmentsId;
 
         /**
+         * The id of the environment variables section within the source model. The builder may ignore this part of the request if
+         * the source format does not permit customization of the id of the environment variables list.
+         */
+        @CheckForNull
+        private String envvarsId;
+        
+        /**
          * The id of the build instructions within the source model. The builder may ignore this part of the request if
          * the source format does not permit customization of the id of build instructions.
          */
@@ -242,6 +268,18 @@ public class ProjectModelRequest {
         @NonNull
         public Builder withEnvironmentsId(@CheckForNull String environmentsId) {
             this.environmentsId = environmentsId;
+            return this;
+        }
+
+        /**
+         * Configure the environments id to use for the request.
+         *
+         * @param envvarsId the environments variables id to use for the request.
+         * @return {@code this} for method chaining.
+         */
+        @NonNull
+        public Builder withEnvvarsId(@CheckForNull String envvarsId) {
+            this.envvarsId = envvarsId;
             return this;
         }
 
@@ -307,7 +345,7 @@ public class ProjectModelRequest {
          */
         @NonNull
         public ProjectModelRequest build() {
-            return new ProjectModelRequest(baseName, repository, environmentsId, buildId, taskIds);
+            return new ProjectModelRequest(baseName, repository, environmentsId, envvarsId, buildId, taskIds);
         }
     }
 }

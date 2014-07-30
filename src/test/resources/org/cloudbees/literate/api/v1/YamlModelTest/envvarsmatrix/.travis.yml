@@ -1,0 +1,5 @@
+env:
+  matrix:
+    - FOO=BAR
+    - FOO=BETA
+build: echo foo

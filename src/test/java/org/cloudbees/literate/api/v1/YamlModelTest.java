@@ -27,12 +27,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeThat;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.cloudbees.literate.api.v1.vfs.FilesystemRepository;
 import org.cloudbees.literate.api.v1.vfs.ProjectRepository;
@@ -121,6 +127,57 @@ public class YamlModelTest {
 
     }
 
+    @Test
+    public void envvarsstring() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+    }
+
+    @Test
+    public void envvarsstringmultiple() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "ALPHA", "BETA");
+    }
+
+    @Test
+    public void envvarsglobalmap() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "ALPHA", "BETA");
+    }
+
+    @Test
+    public void envvarsglobalmaplist() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "FOO", "BAR");
+        assertThatEnvvarIsEqualTo(model, ExecutionEnvironment.any(), "ALPHA", "BETA");
+    }
+    
+    @Test
+    public void envvarsmatrix() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertEquals(2, model.getEnvironments().size());
+        Map<String, String> map1 = new HashMap<String, String>();
+        map1.put("FOO", "BAR");
+        Map<String, String> map2 = new HashMap<String, String>();
+        map2.put("FOO", "BETA");
+        assertThatBuildHasFollowingEnvironment(model, ExecutionEnvironment.any().withVariables(map1), ExecutionEnvironment.any().withVariables(map2));
+    }
+    
+    @Test
+    public void envvarsmatrixandglobal() throws Exception {
+        ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
+        assertEquals(2, model.getEnvironments().size());
+        Map<String, String> map1 = new HashMap<String, String>();
+        map1.put("FOO", "BAR");
+        map1.put("ALPHA", "a");
+        Map<String, String> map2 = new HashMap<String, String>();
+        map2.put("FOO", "BETA");
+        map2.put("ALPHA", "a");
+        assertThatBuildHasFollowingEnvironment(model, ExecutionEnvironment.any().withVariables(map1), ExecutionEnvironment.any().withVariables(map2));
+    }
+
     @Test(expected = ProjectModelBuildingException.class)
     public void noBuildCommand() throws Exception {
         ProjectModel model = new ProjectModelSource().submit(ProjectModelRequest.builder(repository).build());
@@ -186,11 +243,18 @@ public class YamlModelTest {
     }
 
     private void assertThatBuildHasFollowingEnvironment(ProjectModel model, ExecutionEnvironment... environments) {
-        List<ExecutionEnvironment> buildMatchingEnvironment = model.getEnvironments();
+      List<ExecutionEnvironment> buildMatchingEnvironment = new ArrayList<ExecutionEnvironment>(model.getEnvironments());
         assertEquals(environments.length, buildMatchingEnvironment.size());
-        for (int i = 0; i < environments.length; i++) {
-            assertEquals(environments[i], buildMatchingEnvironment.get(i));
-        }
+      List<ExecutionEnvironment> input = new ArrayList<ExecutionEnvironment> (Arrays.asList(environments));
+      Collections.sort(buildMatchingEnvironment);
+      Collections.sort(input);
+      assertEquals(input, buildMatchingEnvironment);
+    }
+    
+    private void assertThatEnvvarIsEqualTo(ProjectModel model, ExecutionEnvironment env, String key, String value) {
+        Map<String, String> map = model.getEnvironmentVariablesFor(env);
+        assertTrue("Key not found : " + key, map.containsKey(key));
+        assertEquals("Value incorrect for " + key, value, map.get(key));
     }
 
 }
