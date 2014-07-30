@@ -141,6 +141,7 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
      */
     private static class Parser {
 
+        private static final String FALLBACK_FILE = "README.md";
         /**
          * Matches header nodes.
          */
@@ -263,16 +264,28 @@ public class MarkdownProjectModelBuilder implements ProjectModelBuilder {
                     }
                 }
                 ProjectModel model;
+                boolean isFallbackFile = FALLBACK_FILE.equals(filePath);
                 try {
                     model = builder.build();
                 } catch (ProjectModelBuildingException e) {
-                    model = null;
+                    if (!isFallbackFile) {
+                        model = null;
+                    } else {
+                        throw new ProjectModelValidationException("Unable to turn " + filePath + " into a valid model", e);
+                    }
                 }
                 if (model == null || model.getBuild().getCommands().isEmpty() && model.getTaskIds().isEmpty()) {
-                    if (!"README.md".equals(filePath)) {
+                    if (!isFallbackFile && repository.isFile(FALLBACK_FILE)) {
                         // try the fall-back
-                        return parseProjectModel(repository, "README.md");
+                        return parseProjectModel(repository, FALLBACK_FILE);
                     }
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Unable to turn " + filePath + " into a valid model. Please check that it contains a valid build section.\n");
+                    sb.append("Valid build sections include :\n");
+                    sb.append("- verbatim (starts by 4 spaces or tab)\n");
+                    sb.append("- bullet list (starts by *, +, -, or a number)\n");
+                    sb.append("- definition list");
+                    throw new ProjectModelValidationException(sb.toString());
                 }
                 return model;
             } finally {
