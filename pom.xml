@@ -176,6 +176,10 @@
                       Plugin.
                     </message>
                   </requireMavenVersion>
+                  <requireJavaVersion>
+                  	<version>[1.7,)</version>
+                  	<message>A JDK1.7 or later is required to build this project.</message>
+                  </requireJavaVersion>
                 </rules>
               </configuration>
             </execution>
