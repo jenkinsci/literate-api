@@ -132,11 +132,12 @@ public class FilesystemRepository implements ProjectRepository {
                 throw new PathNotFoundException("Path is outside of repository");
             }
         }
-        if (!dir.isDirectory()) {
-            throw new PathNotFoundException("Path does not exist or is not a directory");
-        }
         Set<String> result = new TreeSet<String>();
-        for (File f : dir.listFiles()) {
+        File[] files = dir.listFiles();
+        if (files == null) {
+        	throw new PathNotFoundException("Path does not exist or is not a directory");
+        }
+		for (File f : files) {
             if (f.isDirectory()) {
                 result.add(prefix + f.getName() + "/");
             } else {
